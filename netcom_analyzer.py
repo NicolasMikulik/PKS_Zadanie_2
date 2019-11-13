@@ -1,20 +1,31 @@
 import struct
 
-def print_ethernet_ip(buffer):
-    print("Ethernet II")
-    print('Source MAC: ', end='')
+
+def print_mac(quelle, address):
+    print("\n", quelle, sep='', end='')
     for spot in range(0, (len(destination_address))):
         char = destination_address[spot:spot + 1]
         first = (ord(char) >> 4) & 15
         second = ord(char) & 15
         print(format(first, 'x'), format(second, 'x'), " ", sep='', end='')
 
-    print('\nDestination MAC: ', end='')
+
+def print_ethernet_ip(buffer):
+    print("Ethernet II", end='')
+    print_mac('Source MAC: ', destination_address)
+    '''print('Source MAC: ', end='')
+    for spot in range(0, (len(destination_address))):
+        char = destination_address[spot:spot + 1]
+        first = (ord(char) >> 4) & 15
+        second = ord(char) & 15
+        print(format(first, 'x'), format(second, 'x'), " ", sep='', end='')'''
+    print_mac('Destination MAC: ', source_address)
+    '''print('\nDestination MAC: ', end='')
     for spot in range(0, (len(source_address))):
         char = source_address[spot:spot + 1]
         first = (ord(char) >> 4) & 15
         second = ord(char) & 15
-        print(format(first, 'x'), format(second, 'x'), " ", sep='', end='')
+        print(format(first, 'x'), format(second, 'x'), " ", sep='', end='')'''
 
     ip_info = buffer[14:15]
     print("\n", ord(ip_info))
@@ -34,7 +45,7 @@ def print_ethernet_ip(buffer):
     dst_ip2 = buffer[31:32]
     dst_ip3 = buffer[32:33]
     dst_ip4 = buffer[33:34]
-    print("Source IP: ", end='')
+    print("Destination IP: ", end='')
     print(ord(dst_ip1), ord(dst_ip2), ord(dst_ip3), ord(dst_ip4), sep='.')
     if transport_protocol == 17:
         print("UDP")
@@ -81,6 +92,7 @@ def print_ethernet_arp(buffer):
         print(format(first, 'x'), format(second, 'x'), " ", sep='', end='')
         if line_length == 16 or spot == len(buffer)-1:
             print()
+            line_length = 0
             line_length = 0
     print()
     pass
@@ -143,7 +155,7 @@ while byte:
         dst_ip2 = buffer[31:32]
         dst_ip3 = buffer[32:33]
         dst_ip4 = buffer[33:34]
-        print("Source IP: ", end='')
+        print("Destination IP: ", end='')
         print(ord(dst_ip1), ord(dst_ip2), ord(dst_ip3), ord(dst_ip4), sep='.')
         if transport_protocol == 17:
             print("UDP")
