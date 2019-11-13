@@ -1,6 +1,20 @@
 import struct
 
 
+def print_bytes(buffer):
+    line_length = 0
+    for spot in range(0, (len(buffer))):
+        line_length += 1
+        char = buffer[spot:spot + 1]
+        first = (ord(char) >> 4) & 15
+        second = ord(char) & 15
+        print(format(first, 'x'), format(second, 'x'), " ", sep='', end='')
+        if line_length == 16 or spot == len(buffer) - 1:
+            print()
+            line_length = 0
+    pass
+
+
 def print_mac(quelle, address):
     print("\n", quelle, sep='', end='')
     for spot in range(0, (len(destination_address))):
@@ -13,19 +27,7 @@ def print_mac(quelle, address):
 def print_ethernet_ip(buffer):
     print("Ethernet II", end='')
     print_mac('Source MAC: ', destination_address)
-    '''print('Source MAC: ', end='')
-    for spot in range(0, (len(destination_address))):
-        char = destination_address[spot:spot + 1]
-        first = (ord(char) >> 4) & 15
-        second = ord(char) & 15
-        print(format(first, 'x'), format(second, 'x'), " ", sep='', end='')'''
     print_mac('Destination MAC: ', source_address)
-    '''print('\nDestination MAC: ', end='')
-    for spot in range(0, (len(source_address))):
-        char = source_address[spot:spot + 1]
-        first = (ord(char) >> 4) & 15
-        second = ord(char) & 15
-        print(format(first, 'x'), format(second, 'x'), " ", sep='', end='')'''
 
     ip_info = buffer[14:15]
     print("\n", ord(ip_info))
@@ -51,8 +53,8 @@ def print_ethernet_ip(buffer):
         print("UDP")
     elif transport_protocol == 6:
         print("TCP")
-    # print(buffer, len(buffer))
-    line_length = 0
+    print_bytes(buffer)
+    '''line_length = 0
     for spot in range(0, (len(buffer))):
         line_length += 1
         char = buffer[spot:spot + 1]
@@ -61,29 +63,21 @@ def print_ethernet_ip(buffer):
         print(format(first, 'x'), format(second, 'x'), " ", sep='', end='')
         if line_length == 16 or spot == len(buffer)-1:
             print()
-            line_length = 0
+            line_length = 0'''
     print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0])
     print()
     pass
 
-def print_ethernet_arp(buffer):
-    print("Ethernet II\nARP")
-    print('Source MAC: ', end='')
-    for spot in range(0, (len(destination_address))):
-        char = destination_address[spot:spot + 1]
-        first = (ord(char) >> 4) & 15
-        second = ord(char) & 15
-        print(format(first, 'x'), format(second, 'x'), " ", sep='', end='')
 
-    print('\nDestination MAC: ', end='')
-    for spot in range(0, (len(source_address))):
-        char = source_address[spot:spot + 1]
-        first = (ord(char) >> 4) & 15
-        second = ord(char) & 15
-        print(format(first, 'x'), format(second, 'x'), " ", sep='', end='')
+def print_ethernet_arp(buffer):
+    print("Ethernet II\nARP", end='')
+
+    print_mac('Source MAC: ', destination_address)
+    print_mac('Destination MAC: ', source_address)
 
     print()
-    line_length = 0
+    print_bytes(buffer)
+    '''line_length = 0
     for spot in range(0, (len(buffer))):
         line_length += 1
         char = buffer[spot:spot + 1]
@@ -93,7 +87,7 @@ def print_ethernet_arp(buffer):
         if line_length == 16 or spot == len(buffer)-1:
             print()
             line_length = 0
-            line_length = 0
+            line_length = 0'''
     print()
     pass
 
