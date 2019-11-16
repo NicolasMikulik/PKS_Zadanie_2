@@ -11,6 +11,8 @@ def print_bytes(buffer):
         first = (ord(char) >> 4) & 15
         second = ord(char) & 15
         print(format(first, 'x'), format(second, 'x'), " ", sep='', end='')
+        if line_length == 8:
+            print(" ", end='')
         if line_length == 16 or spot == len(buffer) - 1:
             print()
             line_length = 0
@@ -98,7 +100,6 @@ def print_ethernet_ip(buffer):
     elif transport_protocol == 6:
         print("TCP")
         print_tcp(buffer)
-    print_bytes(buffer)
     print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0])
     print()
     pass
@@ -109,11 +110,9 @@ def print_ethernet_arp(buffer):
     print_mac('Source MAC: ', buffer[6:12])
     print_mac('Destination MAC: ', buffer[0:6])
     print()
-    print_bytes(buffer)
-    print()
     pass
 
-fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/eth-8.pcap", "rb")
+fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/trace-15.pcap", "rb")
 frame_number = 0
 byte = fh.read(32)
 while byte:
@@ -147,21 +146,17 @@ while byte:
             print_mac('Source MAC: ', source_address)
             print_mac('Destination MAC: ', destination_address)
             print()
-            print_bytes()
-            print()
         elif ieee_type[0] == 255:
             print("IEEE 802.3 Raw")
             print_mac('Source MAC: ', source_address)
             print_mac('Destination MAC: ', destination_address)
-            print()
-            print_bytes()
             print()
         else:
             print("IEEE 802.3 LLC")
             print_mac('Source MAC: ', source_address)
             print_mac('Destination MAC: ', destination_address)
             print()
-            print_bytes()
-            print()
+    print_bytes(buffer)
+    print()
 
 fh.close()
