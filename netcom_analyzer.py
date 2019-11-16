@@ -46,7 +46,7 @@ def print_arp_srcip(buffer):
     src_ip3 = buffer[30:31]
     src_ip4 = buffer[31:32]
     source_ip = str(ord(src_ip1)) + '.' + str(ord(src_ip2)) + '.' + str(ord(src_ip3)) + '.' + str(ord(src_ip4))
-    print(source_ip, end=' ')
+    return source_ip
 
 
 def print_arp_dstip(buffer):
@@ -55,8 +55,7 @@ def print_arp_dstip(buffer):
     dst_ip3 = buffer[40:41]
     dst_ip4 = buffer[41:42]
     destination_ip = str(ord(dst_ip1))+'.'+str(ord(dst_ip2))+'.'+str(ord(dst_ip3))+'.'+str(ord(dst_ip4))
-    print(destination_ip, end=' ')
-
+    return destination_ip
 
 def print_srcip(buffer):
     src_ip1 = buffer[26:27]
@@ -156,20 +155,18 @@ def print_ethernet_arp(buffer):
     print_mac('Destination MAC: ', buffer[0:6])
     src_mac_record = read_mac(buffer[6:12])
     dst_mac_record = read_mac(buffer[0:6])
-    if src_mac_record not in arp_rank.keys():
+    mac_and_ip = src_mac_record + print_arp_srcip(buffer) + print_arp_dstip(buffer)
+    reply_mac_and_ip = dst_mac_record + print_arp_dstip(buffer) + print_arp_srcip(buffer)
+    print("MAC and IP", mac_and_ip, "REPLY MAC and IP", reply_mac_and_ip)
+    if mac_and_ip not in arp_rank.keys():
         if dst_mac_record == 'ffffffffffff':
-            arp_rank[src_mac_record] = list()
-            arp_rank[src_mac_record].append(frame_number)
+            arp_rank[mac_and_ip] = list()
+            arp_rank[mac_and_ip].append(frame_number)
         elif dst_mac_record != 'ffffffffffff':
-            if dst_mac_record in arp_rank.keys():
-                arp_rank[dst_mac_record].append(frame_number)
-            else:
-                arp_rank[src_mac_record] = list()
-                arp_rank[src_mac_record].append(frame_number)
-    elif src_mac_record in arp_rank.keys() and dst_mac_record != 'ffffffffffff' and dst_mac_record in arp_rank.keys():
-        arp_rank[dst_mac_record].append(frame_number)
-    elif src_mac_record in arp_rank.keys() and arp_rank[src_mac_record].count(frame_number)<=0:
-        arp_rank[src_mac_record].append(frame_number)
+            if reply_mac_and_ip in arp_rank.keys():
+                arp_rank[reply_mac_and_ip].append(frame_number)
+    elif mac_and_ip in arp_rank.keys() and dst_mac_record == 'ffffffffffff' and arp_rank[mac_and_ip].count(frame_number)<=0:
+        arp_rank[mac_and_ip].append(frame_number)
     print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0])
     print()
     pass
@@ -257,10 +254,8 @@ for key in arp_rank.keys():
             print("ARP-Request, IP address: ", end='')
             print_arp_dstip(buffer)
             print("MAC: ???")
-            print("Sender IP: ", end='')
-            print_arp_srcip(buffer)
-            print(", Target IP: ", end='')
-            print_arp_dstip(buffer)
+            print("Sender IP: ", print_arp_srcip(buffer), end='')
+            print(", Target IP: ", print_arp_dstip(buffer), end='')
             print("\nFRAME :", frame_number + 1)
             print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0], "\nEthernet II - ARP", end='')
             source_address = buffer[6:12]
@@ -272,9 +267,9 @@ for key in arp_rank.keys():
             print("ARP-Reply, IP address: ", end='')
             print_arp_srcip(buffer)
             print_mac('MAC: ', buffer[22:28])
-            print("\nSender IP: ", end='')
+            print("\nSender IP: ", print_arp_srcip(buffer), end='')
             print_arp_srcip(buffer)
-            print(", Target IP: ", end='')
+            print(", Target IP: ", print_arp_dstip(buffer), end='')
             print_arp_dstip(buffer)
             print("\nFRAME :", frame_number + 1)
             print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0], "\nEthernet II - ARP", end='')
