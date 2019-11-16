@@ -4,6 +4,7 @@ import struct
 tftp = list()
 ip_addresses = list()
 ip_rank = dict()
+arp_rank = dict()
 
 def print_bytes(buffer):
     line_length = 0
@@ -26,7 +27,19 @@ def print_mac(quelle, address):
         char = address[spot:spot + 1]
         first = (ord(char) >> 4) & 15
         second = ord(char) & 15
+        # mac_record = mac_record + format(first, 'x') + format(second, 'x')
         print(format(first, 'x'), format(second, 'x'), " ", sep='', end='')
+
+
+def read_mac(address):
+    mac_record = ""
+    for spot in range(0, (len(address))):
+        char = address[spot:spot + 1]
+        first = (ord(char) >> 4) & 15
+        second = ord(char) & 15
+        mac_record = mac_record + format(first, 'x') + format(second, 'x')
+    print(mac_record, "---------")
+    return mac_record
 
 
 def print_srcip(buffer):
@@ -125,10 +138,25 @@ def print_ethernet_arp(buffer):
     print("Ethernet II\nARP", end='')
     print_mac('Source MAC: ', buffer[6:12])
     print_mac('Destination MAC: ', buffer[0:6])
-    print()
+    src_mac_record = read_mac(buffer[22:28])
+    dst_mac_record = read_mac(buffer[32:38])
+    if src_mac_record not in arp_rank.keys():
+        if dst_mac_record == '000000000000':
+            arp_rank[src_mac_record] = list()
+            arp_rank[src_mac_record].append(frame_number)
+        elif dst_mac_record != '000000000000':
+            if dst_mac_record in arp_rank.keys():
+                arp_rank[dst_mac_record].append(frame_number)
+            else:
+                arp_rank[src_mac_record] = list()
+                arp_rank[src_mac_record].append(frame_number)
+    elif src_mac_record in arp_rank.keys() and arp_rank[src_mac_record].count(frame_number)<=0:
+        print("HELLo")
+        arp_rank[src_mac_record].append(frame_number)
+    print(arp_rank, "TEST")
     pass
 
-fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/trace-16.pcap", "rb")
+fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/eth-8.pcap", "rb")
 frame_number = 0
 byte = fh.read(32)
 while byte:
@@ -174,4 +202,5 @@ for ipv4 in ip_rank.keys():
 sorted_ip_rank = sorted(ip_rank.items(), key=lambda kv: kv[1], reverse=True)
 # print(sorted_ip_rank)
 print("\nHighest number of packets (", sorted_ip_rank[0][1], ") was sent by ", sorted_ip_rank[0][0], sep='')
+print(arp_rank)
 fh.close()
