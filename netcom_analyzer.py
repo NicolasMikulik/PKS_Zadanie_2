@@ -165,13 +165,16 @@ def print_ethernet_arp(buffer):
         elif dst_mac_record != 'ffffffffffff':
             if reply_mac_and_ip in arp_rank.keys():
                 arp_rank[reply_mac_and_ip].append(frame_number)
+            else:
+                arp_rank[mac_and_ip] = list()
+                arp_rank[mac_and_ip].append(frame_number)
     elif mac_and_ip in arp_rank.keys() and dst_mac_record == 'ffffffffffff' and arp_rank[mac_and_ip].count(frame_number)<=0:
         arp_rank[mac_and_ip].append(frame_number)
     print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0])
     print()
     pass
 
-fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/trace-24.pcap", "rb")
+fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/eth-8.pcap", "rb")
 frame_number = 0
 byte = fh.read(32)
 while byte:
@@ -251,8 +254,7 @@ for key in arp_rank.keys():
         arp_opcode = buffer[20:22]
         arp_opcode = struct.unpack('>H', arp_opcode)
         if arp_opcode[0] == 1:
-            print("ARP-Request, IP address: ", end='')
-            print_arp_dstip(buffer)
+            print("ARP-Request, IP address: ", print_arp_dstip(buffer), end=' ')
             print("MAC: ???")
             print("Sender IP: ", print_arp_srcip(buffer), end='')
             print(", Target IP: ", print_arp_dstip(buffer), end='')
@@ -264,8 +266,7 @@ for key in arp_rank.keys():
             print_mac('Destination MAC: ', destination_address)
             print(), print_bytes(buffer), print()
         elif arp_opcode[0] == 2:
-            print("ARP-Reply, IP address: ", end='')
-            print_arp_srcip(buffer)
+            print("ARP-Reply, IP address: ", print_arp_srcip(buffer), end=' ')
             print_mac('MAC: ', buffer[22:28])
             print("\nSender IP: ", print_arp_srcip(buffer), end='')
             print_arp_srcip(buffer)
