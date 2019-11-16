@@ -1,6 +1,8 @@
 import struct
 
 
+tftp = list()
+
 def print_bytes(buffer):
     line_length = 0
     for spot in range(0, (len(buffer))):
@@ -40,6 +42,41 @@ def print_dstip(buffer):
     print(ord(dst_ip1), ord(dst_ip2), ord(dst_ip3), ord(dst_ip4), sep='.')
 
 
+def print_udp(buffer):
+    src_udp_port = buffer[34:36]
+    src_udp_port = struct.unpack('>H', src_udp_port)
+    src_udp_port = src_udp_port[0]
+    dst_udp_port = buffer[36:38]
+    dst_udp_port = struct.unpack('>H', dst_udp_port)
+    dst_udp_port = dst_udp_port[0]
+    print("Source port: ", src_udp_port, "\nDestination port: ", dst_udp_port, sep='')
+    if dst_udp_port == 69:
+        tftp.append(src_udp_port)
+        if src_udp_port in tftp and dst_udp_port not in tftp:
+            tftp.append(dst_udp_port)
+        if src_udp_port in tftp and dst_udp_port in tftp:
+            print("TFTP - Source port:", src_udp_port, "Destination port: ", dst_udp_port)
+    if dst_udp_port != 69 and (dst_udp_port in tftp or src_udp_port in tftp):
+        if dst_udp_port in tftp and src_udp_port not in tftp:
+            tftp.append(src_udp_port)
+        if src_udp_port in tftp and dst_udp_port not in tftp:
+            tftp.append(dst_udp_port)
+        if src_udp_port in tftp and dst_udp_port in tftp:
+            print("TFTP - Source port:", src_udp_port, "Destination port: ", dst_udp_port)
+    pass
+
+
+def print_tcp(buffer):
+    src_tcp_port = buffer[34:36]
+    src_tcp_port = struct.unpack('>H', src_tcp_port)
+    src_tcp_port = src_tcp_port[0]
+    dst_tcp_port = buffer[36:38]
+    dst_tcp_port = struct.unpack('>H', dst_tcp_port)
+    dst_tcp_port = dst_tcp_port[0]
+    print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
+    pass
+
+
 def print_ethernet_ip(buffer):
     print("Ethernet II", end='')
     print_mac('Source MAC: ', buffer[6:12])
@@ -53,24 +90,14 @@ def print_ethernet_ip(buffer):
         print("\nIPv4 (IHL", str(ip_hl) + ")")
     transport_protocol = buffer[23:24]
     transport_protocol = ord(transport_protocol)
-    '''src_ip1 = buffer[26:27]
-    src_ip2 = buffer[27:28]
-    src_ip3 = buffer[28:29]
-    src_ip4 = buffer[29:30]
-    print("Source IP: ", end='')
-    print(ord(src_ip1), ord(src_ip2), ord(src_ip3), ord(src_ip4), sep='.')'''
     print_srcip(buffer)
-    '''dst_ip1 = buffer[30:31]
-    dst_ip2 = buffer[31:32]
-    dst_ip3 = buffer[32:33]
-    dst_ip4 = buffer[33:34]
-    print("Destination IP: ", end='')
-    print(ord(dst_ip1), ord(dst_ip2), ord(dst_ip3), ord(dst_ip4), sep='.')'''
     print_dstip(buffer)
     if transport_protocol == 17:
         print("UDP")
+        print_udp(buffer)
     elif transport_protocol == 6:
         print("TCP")
+        print_tcp(buffer)
     print_bytes(buffer)
     print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0])
     print()
