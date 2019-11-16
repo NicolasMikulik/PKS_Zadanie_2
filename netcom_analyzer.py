@@ -27,7 +27,6 @@ def print_mac(quelle, address):
         char = address[spot:spot + 1]
         first = (ord(char) >> 4) & 15
         second = ord(char) & 15
-        # mac_record = mac_record + format(first, 'x') + format(second, 'x')
         print(format(first, 'x'), format(second, 'x'), " ", sep='', end='')
 
 
@@ -38,8 +37,25 @@ def read_mac(address):
         first = (ord(char) >> 4) & 15
         second = ord(char) & 15
         mac_record = mac_record + format(first, 'x') + format(second, 'x')
-    print(mac_record, "---------")
     return mac_record
+
+
+def print_arp_srcip(buffer):
+    src_ip1 = buffer[28:29]
+    src_ip2 = buffer[29:30]
+    src_ip3 = buffer[30:31]
+    src_ip4 = buffer[31:32]
+    source_ip = str(ord(src_ip1)) + '.' + str(ord(src_ip2)) + '.' + str(ord(src_ip3)) + '.' + str(ord(src_ip4))
+    print(source_ip, end=' ')
+
+
+def print_arp_dstip(buffer):
+    dst_ip1 = buffer[38:39]
+    dst_ip2 = buffer[39:40]
+    dst_ip3 = buffer[40:41]
+    dst_ip4 = buffer[41:42]
+    destination_ip = str(ord(dst_ip1))+'.'+str(ord(dst_ip2))+'.'+str(ord(dst_ip3))+'.'+str(ord(dst_ip4))
+    print(destination_ip, end=' ')
 
 
 def print_srcip(buffer):
@@ -151,9 +167,9 @@ def print_ethernet_arp(buffer):
                 arp_rank[src_mac_record] = list()
                 arp_rank[src_mac_record].append(frame_number)
     elif src_mac_record in arp_rank.keys() and arp_rank[src_mac_record].count(frame_number)<=0:
-        print("HELLo")
         arp_rank[src_mac_record].append(frame_number)
-    print(arp_rank, "TEST")
+    print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0])
+    print()
     pass
 
 fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/eth-8.pcap", "rb")
@@ -203,4 +219,64 @@ sorted_ip_rank = sorted(ip_rank.items(), key=lambda kv: kv[1], reverse=True)
 # print(sorted_ip_rank)
 print("\nHighest number of packets (", sorted_ip_rank[0][1], ") was sent by ", sorted_ip_rank[0][0], sep='')
 print(arp_rank)
+
+arp_com = 0
+for key in arp_rank.keys():
+    arp_com += 1
+    print("ARP communication nr. ", arp_com)
+    while len(arp_rank[key]) > 0:
+        arp_frame = arp_rank[key].pop(0)
+        fh.seek(0, 0)
+        frame_number = 0
+        byte = fh.read(32)
+        while arp_frame != (frame_number + 1):
+            frame_number += 1
+            if frame_number > 1:
+                byte = fh.read(8)
+            saved = fh.read(4)
+            # print("FRAME :", frame_number)
+            saved = struct.unpack('<I', saved)
+            wire = fh.read(4)
+            wire = struct.unpack('<I', wire)
+            next_frame_offset = wire[0]
+            byte = buffer = fh.read(next_frame_offset)
+            next_frame_offset -= 12
+        byte = fh.read(8)
+        saved = fh.read(4)
+        saved = struct.unpack('<I', saved)
+        wire = fh.read(4)
+        wire = struct.unpack('<I', wire)
+        next_frame_offset = wire[0]
+        byte = buffer = fh.read(next_frame_offset)
+        arp_opcode = buffer[20:22]
+        arp_opcode = struct.unpack('>H', arp_opcode)
+        if arp_opcode[0] == 1:
+            print("ARP-Request, IP address: ", end='')
+            print_arp_dstip(buffer)
+            print("MAC: ???")
+            print("Sender IP: ", end='')
+            print_arp_srcip(buffer)
+            print("Target IP: ", end='')
+            print_arp_dstip(buffer)
+            print("\nFRAME :", frame_number + 1)
+            print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0], "\nEthernet II - ARP", end='')
+            destination_address = buffer[6:12]
+            source_address = buffer[0:6]
+            print_mac('Source MAC: ', source_address)
+            print_mac('Destination MAC: ', destination_address)
+            print(), print_bytes(buffer), print()
+        elif arp_opcode[0] == 2:
+            print("ARP-Reply, IP address: ", end='')
+            print_arp_srcip(buffer)
+            print_mac('MAC: ', source_address)
+            print("\nFRAME :", frame_number + 1)
+            print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0], "\nEthernet II - ARP", end='')
+            destination_address = buffer[6:12]
+            source_address = buffer[0:6]
+            print_mac('Source MAC: ', source_address)
+            print_mac('Destination MAC: ', destination_address)
+            print(), print_bytes(buffer), print()
+
+
+
 fh.close()
