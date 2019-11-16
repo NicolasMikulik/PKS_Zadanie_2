@@ -2,6 +2,7 @@ import struct
 
 
 tftp = list()
+ip_addresses = list()
 
 def print_bytes(buffer):
     line_length = 0
@@ -33,7 +34,9 @@ def print_srcip(buffer):
     src_ip3 = buffer[28:29]
     src_ip4 = buffer[29:30]
     print("Source IP: ", end='')
-    print(ord(src_ip1), ord(src_ip2), ord(src_ip3), ord(src_ip4), sep='.')
+    source_ip = str(ord(src_ip1)) + '.' + str(ord(src_ip2)) + '.' + str(ord(src_ip3)) + '.' + str(ord(src_ip4))
+    print(source_ip)
+    # print(ord(src_ip1), ord(src_ip2), ord(src_ip3), ord(src_ip4), sep='.')
 
 def print_dstip(buffer):
     dst_ip1 = buffer[30:31]
@@ -41,7 +44,9 @@ def print_dstip(buffer):
     dst_ip3 = buffer[32:33]
     dst_ip4 = buffer[33:34]
     print("Destination IP: ", end='')
-    print(ord(dst_ip1), ord(dst_ip2), ord(dst_ip3), ord(dst_ip4), sep='.')
+    destination_ip = str(ord(dst_ip1))+'.'+str(ord(dst_ip2))+'.'+str(ord(dst_ip3))+'.'+str(ord(dst_ip4))
+    print(destination_ip)
+    # print(ord(dst_ip1), ord(dst_ip2), ord(dst_ip3), ord(dst_ip4), sep='.')
 
 
 def print_udp(buffer):
@@ -51,20 +56,24 @@ def print_udp(buffer):
     dst_udp_port = buffer[36:38]
     dst_udp_port = struct.unpack('>H', dst_udp_port)
     dst_udp_port = dst_udp_port[0]
-    print("Source port: ", src_udp_port, "\nDestination port: ", dst_udp_port, sep='')
     if dst_udp_port == 69:
         tftp.append(src_udp_port)
         if src_udp_port in tftp and dst_udp_port not in tftp:
             tftp.append(dst_udp_port)
         if src_udp_port in tftp and dst_udp_port in tftp:
-            print("TFTP - Source port:", src_udp_port, "Destination port: ", dst_udp_port)
+            print("TFTP")
     if dst_udp_port != 69 and (dst_udp_port in tftp or src_udp_port in tftp):
         if dst_udp_port in tftp and src_udp_port not in tftp:
             tftp.append(src_udp_port)
         if src_udp_port in tftp and dst_udp_port not in tftp:
             tftp.append(dst_udp_port)
         if src_udp_port in tftp and dst_udp_port in tftp:
-            print("TFTP - Source port:", src_udp_port, "Destination port: ", dst_udp_port)
+            print("TFTP")
+    if src_udp_port == 53 or dst_udp_port == 53:
+        print("DNS")
+    if src_udp_port == 137 or dst_udp_port == 137:
+        print("NetBIOS Name Service")
+    print("Source port: ", src_udp_port, "\nDestination port: ", dst_udp_port, sep='')
     pass
 
 
@@ -75,6 +84,8 @@ def print_tcp(buffer):
     dst_tcp_port = buffer[36:38]
     dst_tcp_port = struct.unpack('>H', dst_tcp_port)
     dst_tcp_port = dst_tcp_port[0]
+    if src_tcp_port == 139 or dst_tcp_port == 139:
+        print("NetBIOS Session Service")
     print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
     pass
 
@@ -112,7 +123,7 @@ def print_ethernet_arp(buffer):
     print()
     pass
 
-fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/trace-15.pcap", "rb")
+fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/eth-8.pcap", "rb")
 frame_number = 0
 byte = fh.read(32)
 while byte:
@@ -143,19 +154,13 @@ while byte:
         ieee_type = buffer[14:15]
         if ieee_type[0] == 170:
             print("IEEE 802.3 SNAP")
-            print_mac('Source MAC: ', source_address)
-            print_mac('Destination MAC: ', destination_address)
-            print()
         elif ieee_type[0] == 255:
             print("IEEE 802.3 Raw")
-            print_mac('Source MAC: ', source_address)
-            print_mac('Destination MAC: ', destination_address)
-            print()
         else:
             print("IEEE 802.3 LLC")
-            print_mac('Source MAC: ', source_address)
-            print_mac('Destination MAC: ', destination_address)
-            print()
+        print_mac('Source MAC: ', source_address)
+        print_mac('Destination MAC: ', destination_address)
+        print()
     print_bytes(buffer)
     print()
 
