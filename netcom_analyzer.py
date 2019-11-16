@@ -119,6 +119,18 @@ def print_tcp(buffer):
     dst_tcp_port = dst_tcp_port[0]
     if src_tcp_port == 139 or dst_tcp_port == 139:
         print("NetBIOS Session Service")
+    elif src_tcp_port == 20 or dst_tcp_port == 20:
+        print("FTP-DATA")
+    elif src_tcp_port == 21 or dst_tcp_port == 21:
+        print("FTP-CONTROL")
+    elif src_tcp_port == 22 or dst_tcp_port == 22:
+        print("SSH")
+    elif src_tcp_port == 23 or dst_tcp_port == 23:
+        print("TELNET")
+    elif src_tcp_port == 80 or dst_tcp_port == 80:
+        print("HTTP")
+    elif src_tcp_port == 443 or dst_tcp_port == 443:
+        print("HTTPS")
     print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
     pass
 
@@ -144,6 +156,10 @@ def print_ethernet_ip(buffer):
     elif transport_protocol == 6:
         print("TCP")
         print_tcp(buffer)
+    elif transport_protocol == 1:
+        print("ICMP")
+    elif transport_protocol == 88:
+        print("EIGRP")
     print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0])
     print()
     pass
@@ -174,7 +190,7 @@ def print_ethernet_arp(buffer):
     print()
     pass
 
-fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/eth-8.pcap", "rb")
+fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/trace-1.pcap", "rb")
 frame_number = 0
 byte = fh.read(32)
 while byte:
