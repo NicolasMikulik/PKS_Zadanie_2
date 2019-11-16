@@ -172,7 +172,7 @@ def print_ethernet_arp(buffer):
     print()
     pass
 
-fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/eth-8.pcap", "rb")
+fh = open("/home/nicolas/Documents/FIIT/PKS/PKS_Cvicenie4/wireshark-traces/tcp-ethereal-trace-1", "rb")
 frame_number = 0
 byte = fh.read(32)
 while byte:
@@ -256,27 +256,30 @@ for key in arp_rank.keys():
             print("MAC: ???")
             print("Sender IP: ", end='')
             print_arp_srcip(buffer)
-            print("Target IP: ", end='')
+            print(", Target IP: ", end='')
             print_arp_dstip(buffer)
             print("\nFRAME :", frame_number + 1)
             print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0], "\nEthernet II - ARP", end='')
-            destination_address = buffer[6:12]
-            source_address = buffer[0:6]
+            source_address = buffer[6:12]
+            destination_address = buffer[0:6]
             print_mac('Source MAC: ', source_address)
             print_mac('Destination MAC: ', destination_address)
             print(), print_bytes(buffer), print()
         elif arp_opcode[0] == 2:
             print("ARP-Reply, IP address: ", end='')
             print_arp_srcip(buffer)
-            print_mac('MAC: ', source_address)
+            print_mac('MAC: ', buffer[22:28])
+            print("\nSender IP: ", end='')
+            print_arp_srcip(buffer)
+            print(", Target IP: ", end='')
+            print_arp_dstip(buffer)
             print("\nFRAME :", frame_number + 1)
             print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0], "\nEthernet II - ARP", end='')
-            destination_address = buffer[6:12]
-            source_address = buffer[0:6]
+            source_address = buffer[6:12]
+            destination_address = buffer[0:6]
             print_mac('Source MAC: ', source_address)
             print_mac('Destination MAC: ', destination_address)
             print(), print_bytes(buffer), print()
-
 
 
 fh.close()
