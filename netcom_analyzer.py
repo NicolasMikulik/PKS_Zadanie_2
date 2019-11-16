@@ -3,6 +3,7 @@ import struct
 
 tftp = list()
 ip_addresses = list()
+ip_rank = dict()
 
 def print_bytes(buffer):
     line_length = 0
@@ -36,7 +37,12 @@ def print_srcip(buffer):
     print("Source IP: ", end='')
     source_ip = str(ord(src_ip1)) + '.' + str(ord(src_ip2)) + '.' + str(ord(src_ip3)) + '.' + str(ord(src_ip4))
     print(source_ip)
-    # print(ord(src_ip1), ord(src_ip2), ord(src_ip3), ord(src_ip4), sep='.')
+    if source_ip not in ip_addresses:
+        ip_addresses.append(source_ip)
+    if source_ip not in ip_rank.keys():
+        ip_rank[source_ip] = 1
+    else:
+        ip_rank[source_ip] = ip_rank[source_ip] + 1
 
 def print_dstip(buffer):
     dst_ip1 = buffer[30:31]
@@ -46,7 +52,6 @@ def print_dstip(buffer):
     print("Destination IP: ", end='')
     destination_ip = str(ord(dst_ip1))+'.'+str(ord(dst_ip2))+'.'+str(ord(dst_ip3))+'.'+str(ord(dst_ip4))
     print(destination_ip)
-    # print(ord(dst_ip1), ord(dst_ip2), ord(dst_ip3), ord(dst_ip4), sep='.')
 
 
 def print_udp(buffer):
@@ -123,7 +128,7 @@ def print_ethernet_arp(buffer):
     print()
     pass
 
-fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/eth-8.pcap", "rb")
+fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/trace-16.pcap", "rb")
 frame_number = 0
 byte = fh.read(32)
 while byte:
@@ -163,5 +168,10 @@ while byte:
         print()
     print_bytes(buffer)
     print()
-
+print("IP addresses of sending nodes:")
+for ipv4 in ip_rank.keys():
+    print(ipv4)
+sorted_ip_rank = sorted(ip_rank.items(), key=lambda kv: kv[1], reverse=True)
+# print(sorted_ip_rank)
+print("\nHighest number of packets (", sorted_ip_rank[0][1], ") was sent by ", sorted_ip_rank[0][0], sep='')
 fh.close()
