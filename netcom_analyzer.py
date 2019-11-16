@@ -16,38 +16,57 @@ def print_bytes(buffer):
 
 def print_mac(quelle, address):
     print("\n", quelle, sep='', end='')
-    for spot in range(0, (len(destination_address))):
-        char = destination_address[spot:spot + 1]
+    for spot in range(0, (len(address))):
+        char = address[spot:spot + 1]
         first = (ord(char) >> 4) & 15
         second = ord(char) & 15
         print(format(first, 'x'), format(second, 'x'), " ", sep='', end='')
 
 
-def print_ethernet_ip(buffer):
-    print("Ethernet II", end='')
-    print_mac('Source MAC: ', destination_address)
-    print_mac('Destination MAC: ', source_address)
-
-    ip_info = buffer[14:15]
-    print("\n", ord(ip_info))
-    ip_v = int(ord(ip_info) >> 4) & 15
-    ip_hl = int(ord(ip_info)) & 15
-    if (ip_v == 4):
-        print("IPv4 (IHL", str(ip_hl) + ")")
-    transport_protocol = buffer[23:24]
-    transport_protocol = ord(transport_protocol)
+def print_srcip(buffer):
     src_ip1 = buffer[26:27]
     src_ip2 = buffer[27:28]
     src_ip3 = buffer[28:29]
     src_ip4 = buffer[29:30]
     print("Source IP: ", end='')
     print(ord(src_ip1), ord(src_ip2), ord(src_ip3), ord(src_ip4), sep='.')
+
+def print_dstip(buffer):
     dst_ip1 = buffer[30:31]
     dst_ip2 = buffer[31:32]
     dst_ip3 = buffer[32:33]
     dst_ip4 = buffer[33:34]
     print("Destination IP: ", end='')
     print(ord(dst_ip1), ord(dst_ip2), ord(dst_ip3), ord(dst_ip4), sep='.')
+
+
+def print_ethernet_ip(buffer):
+    print("Ethernet II", end='')
+    print_mac('Source MAC: ', buffer[6:12])
+    print_mac('Destination MAC: ', buffer[0:6])
+
+    ip_info = buffer[14:15]
+    ip_v = int(ord(ip_info) >> 4) & 15
+    ip_hl = int(ord(ip_info)) & 15
+    # print("\n", ord(ip_info))
+    if ip_v == 4:
+        print("\nIPv4 (IHL", str(ip_hl) + ")")
+    transport_protocol = buffer[23:24]
+    transport_protocol = ord(transport_protocol)
+    '''src_ip1 = buffer[26:27]
+    src_ip2 = buffer[27:28]
+    src_ip3 = buffer[28:29]
+    src_ip4 = buffer[29:30]
+    print("Source IP: ", end='')
+    print(ord(src_ip1), ord(src_ip2), ord(src_ip3), ord(src_ip4), sep='.')'''
+    print_srcip(buffer)
+    '''dst_ip1 = buffer[30:31]
+    dst_ip2 = buffer[31:32]
+    dst_ip3 = buffer[32:33]
+    dst_ip4 = buffer[33:34]
+    print("Destination IP: ", end='')
+    print(ord(dst_ip1), ord(dst_ip2), ord(dst_ip3), ord(dst_ip4), sep='.')'''
+    print_dstip(buffer)
     if transport_protocol == 17:
         print("UDP")
     elif transport_protocol == 6:
@@ -60,8 +79,8 @@ def print_ethernet_ip(buffer):
 
 def print_ethernet_arp(buffer):
     print("Ethernet II\nARP", end='')
-    print_mac('Source MAC: ', destination_address)
-    print_mac('Destination MAC: ', source_address)
+    print_mac('Source MAC: ', buffer[6:12])
+    print_mac('Destination MAC: ', buffer[0:6])
     print()
     print_bytes(buffer)
     print()
@@ -89,9 +108,33 @@ while byte:
     ftype = struct.unpack('>H', ftype)
     print(ftype[0])
     next_frame_offset -= 12
-    if ftype[0] == 2048:
-        print_ethernet_ip(buffer)
-    elif ftype[0] == 2054:
-        print_ethernet_arp(buffer)
+    if ftype[0] > 1500:
+        if ftype[0] == 2048:
+            print_ethernet_ip(buffer)
+        elif ftype[0] == 2054:
+            print_ethernet_arp(buffer)
+    else:
+        ieee_type = buffer[14:15]
+        if ieee_type[0] == 170:
+            print("IEEE 802.3 SNAP")
+            print_mac('Source MAC: ', source_address)
+            print_mac('Destination MAC: ', destination_address)
+            print()
+            print_bytes()
+            print()
+        elif ieee_type[0] == 255:
+            print("IEEE 802.3 Raw")
+            print_mac('Source MAC: ', source_address)
+            print_mac('Destination MAC: ', destination_address)
+            print()
+            print_bytes()
+            print()
+        else:
+            print("IEEE 802.3 LLC")
+            print_mac('Source MAC: ', source_address)
+            print_mac('Destination MAC: ', destination_address)
+            print()
+            print_bytes()
+            print()
 
 fh.close()
