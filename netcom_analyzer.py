@@ -154,25 +154,27 @@ def print_ethernet_arp(buffer):
     print("Ethernet II\nARP", end='')
     print_mac('Source MAC: ', buffer[6:12])
     print_mac('Destination MAC: ', buffer[0:6])
-    src_mac_record = read_mac(buffer[22:28])
-    dst_mac_record = read_mac(buffer[32:38])
+    src_mac_record = read_mac(buffer[6:12])
+    dst_mac_record = read_mac(buffer[0:6])
     if src_mac_record not in arp_rank.keys():
-        if dst_mac_record == '000000000000':
+        if dst_mac_record == 'ffffffffffff':
             arp_rank[src_mac_record] = list()
             arp_rank[src_mac_record].append(frame_number)
-        elif dst_mac_record != '000000000000':
+        elif dst_mac_record != 'ffffffffffff':
             if dst_mac_record in arp_rank.keys():
                 arp_rank[dst_mac_record].append(frame_number)
             else:
                 arp_rank[src_mac_record] = list()
                 arp_rank[src_mac_record].append(frame_number)
+    elif src_mac_record in arp_rank.keys() and dst_mac_record != 'ffffffffffff' and dst_mac_record in arp_rank.keys():
+        arp_rank[dst_mac_record].append(frame_number)
     elif src_mac_record in arp_rank.keys() and arp_rank[src_mac_record].count(frame_number)<=0:
         arp_rank[src_mac_record].append(frame_number)
     print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0])
     print()
     pass
 
-fh = open("/home/nicolas/Documents/FIIT/PKS/PKS_Cvicenie4/wireshark-traces/tcp-ethereal-trace-1", "rb")
+fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/trace-24.pcap", "rb")
 frame_number = 0
 byte = fh.read(32)
 while byte:
@@ -241,7 +243,8 @@ for key in arp_rank.keys():
             next_frame_offset = wire[0]
             byte = buffer = fh.read(next_frame_offset)
             next_frame_offset -= 12
-        byte = fh.read(8)
+        if(frame_number != 0):
+            byte = fh.read(8)
         saved = fh.read(4)
         saved = struct.unpack('<I', saved)
         wire = fh.read(4)
