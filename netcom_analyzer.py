@@ -5,6 +5,8 @@ tftp = list()
 ip_addresses = list()
 ip_rank = dict()
 arp_rank = dict()
+http = dict()
+
 
 def print_bytes(buffer):
     line_length = 0
@@ -62,24 +64,27 @@ def print_srcip(buffer):
     src_ip2 = buffer[27:28]
     src_ip3 = buffer[28:29]
     src_ip4 = buffer[29:30]
-    print("Source IP: ", end='')
+    # print("Source IP: ", end='')
     source_ip = str(ord(src_ip1)) + '.' + str(ord(src_ip2)) + '.' + str(ord(src_ip3)) + '.' + str(ord(src_ip4))
-    print(source_ip)
+    # print(source_ip)
     if source_ip not in ip_addresses:
         ip_addresses.append(source_ip)
     if source_ip not in ip_rank.keys():
         ip_rank[source_ip] = 1
     else:
         ip_rank[source_ip] = ip_rank[source_ip] + 1
+    return source_ip
+
 
 def print_dstip(buffer):
     dst_ip1 = buffer[30:31]
     dst_ip2 = buffer[31:32]
     dst_ip3 = buffer[32:33]
     dst_ip4 = buffer[33:34]
-    print("Destination IP: ", end='')
+    # print("Destination IP: ", end='')
     destination_ip = str(ord(dst_ip1))+'.'+str(ord(dst_ip2))+'.'+str(ord(dst_ip3))+'.'+str(ord(dst_ip4))
-    print(destination_ip)
+    # print(destination_ip)
+    return destination_ip
 
 
 def print_udp(buffer):
@@ -129,6 +134,7 @@ def print_tcp(buffer):
         print("TELNET")
     elif src_tcp_port == 80 or dst_tcp_port == 80:
         print("HTTP")
+
     elif src_tcp_port == 443 or dst_tcp_port == 443:
         print("HTTPS")
     print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
@@ -148,6 +154,8 @@ def print_ethernet_ip(buffer):
         print("\nIPv4 (IHL", str(ip_hl) + ")")
     transport_protocol = buffer[23:24]
     transport_protocol = ord(transport_protocol)
+    print("Source IP:", print_srcip(buffer))
+    print("Destination IP:", print_dstip(buffer))
     print_srcip(buffer)
     print_dstip(buffer)
     if transport_protocol == 17:
@@ -190,7 +198,7 @@ def print_ethernet_arp(buffer):
     print()
     pass
 
-fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/trace-1.pcap", "rb")
+fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/trace-24.pcap", "rb")
 frame_number = 0
 byte = fh.read(32)
 while byte:
@@ -228,6 +236,7 @@ while byte:
         print_mac('Source MAC: ', source_address)
         print_mac('Destination MAC: ', destination_address)
         print()
+        print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0])
     print_bytes(buffer)
     print()
 print("IP addresses of sending nodes:")
