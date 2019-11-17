@@ -20,6 +20,22 @@ RST = 4
 PSH = 8
 ACK = 16
 
+with open('/home/nicolas/Documents/FIIT/PKS/Zadanie_2/netcom_constants.txt') as extern_file:
+    constants = extern_file.readlines()
+constants = [line.strip() for line in constants]
+#print(constants)
+limit = int(constants[1].split(' ')[0])
+print(limit)
+
+
+def get_constant(number):
+    for line in constants:
+        words = line.split(" ")
+        if len(words) > 1:
+            extern_number = int(words[0])
+            if extern_number == number:
+                return words[1]
+
 def print_bytes(buffer):
     line_length = 0
     for spot in range(0, (len(buffer))):
@@ -102,20 +118,20 @@ def print_udp(buffer):
     dst_udp_port = buffer[36:38]
     dst_udp_port = struct.unpack('>H', dst_udp_port)
     dst_udp_port = dst_udp_port[0]
-    if dst_udp_port == 69:
+    if get_constant(dst_udp_port) == "TFTP":
         tftp.append(src_udp_port)
         if src_udp_port in tftp and dst_udp_port not in tftp:
             tftp.append(dst_udp_port)
         if src_udp_port in tftp and dst_udp_port in tftp:
             print("TFTP")
-    if dst_udp_port != 69 and (dst_udp_port in tftp or src_udp_port in tftp):
+    if dst_udp_port != "TFTP" and (dst_udp_port in tftp or src_udp_port in tftp):
         if dst_udp_port in tftp and src_udp_port not in tftp:
             tftp.append(src_udp_port)
         if src_udp_port in tftp and dst_udp_port not in tftp:
             tftp.append(dst_udp_port)
         if src_udp_port in tftp and dst_udp_port in tftp:
             print("TFTP")
-    if dst_udp_port == 69 or src_udp_port == 69 or src_udp_port in tftp or dst_udp_port in tftp:
+    if get_constant(dst_udp_port) == "TFTP" or get_constant(src_udp_port) == "TFTP" or src_udp_port in tftp or dst_udp_port in tftp:
         ip_and_port = print_srcip(buffer) + str(src_udp_port) + print_dstip(buffer)
         reply_ip_and_port = print_dstip(buffer) + str(dst_udp_port) + print_srcip(buffer)
         print(ip_and_port, reply_ip_and_port)
@@ -127,9 +143,9 @@ def print_udp(buffer):
                 tftp_rec[reply_ip_and_port].append(frame_number)
         elif ip_and_port in tftp_rec.keys():
             tftp_rec[ip_and_port].append(frame_number)
-    if src_udp_port == 53 or dst_udp_port == 53:
+    if get_constant(src_udp_port) == "DNS" or get_constant(dst_udp_port) == "DNS":
         print("DNS")
-    if src_udp_port == 137 or dst_udp_port == 137:
+    if get_constant(src_udp_port) == "NETBIOS_NAM" or get_constant(dst_udp_port) == "NETBIOS_NAM":
         print("NetBIOS Name Service")
     print("Source port: ", src_udp_port, "\nDestination port: ", dst_udp_port, sep='')
 
@@ -159,9 +175,9 @@ def print_tcp(buffer):
     dst_tcp_port = buffer[36:38]
     dst_tcp_port = struct.unpack('>H', dst_tcp_port)
     dst_tcp_port = dst_tcp_port[0]
-    if src_tcp_port == 139 or dst_tcp_port == 139:
+    if get_constant(src_tcp_port) == "NETBIOS_SES" or get_constant(dst_tcp_port) == "NETBIOS_SES":
         print("NetBIOS Session Service")
-    elif src_tcp_port == 20 or dst_tcp_port == 20:
+    elif get_constant(src_tcp_port) == "FTP-DATA" or get_constant(dst_tcp_port) == "FTP-DATA":
         print("FTP-DATA")
         ip_and_port = print_srcip(buffer) + str(src_tcp_port) + print_dstip(buffer) + str(dst_tcp_port)
         reply_ip_and_port = print_dstip(buffer) + str(dst_tcp_port) + print_srcip(buffer) + str(src_tcp_port)
@@ -173,7 +189,7 @@ def print_tcp(buffer):
                 ftp_data[reply_ip_and_port].append(frame_number)
         elif ip_and_port in ftp_data.keys():
             ftp_data[ip_and_port].append(frame_number)
-    elif src_tcp_port == 21 or dst_tcp_port == 21:
+    elif get_constant(src_tcp_port) == "FTP-CONTROL" or get_constant(dst_tcp_port) == "FTP-CONTROL":
         print("FTP-CONTROL")
         ip_and_port = print_srcip(buffer) + str(src_tcp_port) + print_dstip(buffer) + str(dst_tcp_port)
         reply_ip_and_port = print_dstip(buffer) + str(dst_tcp_port) + print_srcip(buffer) + str(src_tcp_port)
@@ -185,7 +201,7 @@ def print_tcp(buffer):
                 ftp_control[reply_ip_and_port].append(frame_number)
         elif ip_and_port in ftp_control.keys():
             ftp_control[ip_and_port].append(frame_number)
-    elif src_tcp_port == 22 or dst_tcp_port == 22:
+    elif get_constant(src_tcp_port) == "SSH" or get_constant(dst_tcp_port) == "SSH":
         print("SSH")
         ip_and_port = print_srcip(buffer)+str(src_tcp_port)+print_dstip(buffer)+str(dst_tcp_port)
         reply_ip_and_port = print_dstip(buffer)+str(dst_tcp_port)+print_srcip(buffer)+str(src_tcp_port)
@@ -197,7 +213,7 @@ def print_tcp(buffer):
                 ssh[reply_ip_and_port].append(frame_number)
         elif ip_and_port in ssh.keys():
             ssh[ip_and_port].append(frame_number)
-    elif src_tcp_port == 23 or dst_tcp_port == 23:
+    elif get_constant(src_tcp_port) == "TELNET" or get_constant(dst_tcp_port) == "TELNET":
         print("TELNET")
         ip_and_port = print_srcip(buffer) + str(src_tcp_port) + print_dstip(buffer) + str(dst_tcp_port)
         reply_ip_and_port = print_dstip(buffer) + str(dst_tcp_port) + print_srcip(buffer) + str(src_tcp_port)
@@ -210,7 +226,7 @@ def print_tcp(buffer):
                 telnet[reply_ip_and_port].append(frame_number)
         elif ip_and_port in telnet.keys():
             telnet[ip_and_port].append(frame_number)
-    elif src_tcp_port == 80 or dst_tcp_port == 80:
+    elif get_constant(src_tcp_port) == "HTTP" or get_constant(dst_tcp_port) == "HTTP":
         print("HTTP")
         ip_and_port = print_srcip(buffer)+str(src_tcp_port)+print_dstip(buffer)+str(dst_tcp_port)
         reply_ip_and_port = print_dstip(buffer)+str(dst_tcp_port)+print_srcip(buffer)+str(src_tcp_port)
@@ -222,7 +238,7 @@ def print_tcp(buffer):
                 http[reply_ip_and_port].append(frame_number)
         elif ip_and_port in http.keys():
             http[ip_and_port].append(frame_number)
-    elif src_tcp_port == 443 or dst_tcp_port == 443:
+    elif get_constant(src_tcp_port) == "HTTPS" or get_constant(dst_tcp_port) == "HTTPS":
         print("HTTPS")
         ip_and_port = print_srcip(buffer) + str(src_tcp_port) + print_dstip(buffer) + str(dst_tcp_port)
         reply_ip_and_port = print_dstip(buffer) + str(dst_tcp_port) + print_srcip(buffer) + str(src_tcp_port)
@@ -295,16 +311,17 @@ def print_ethernet_ip(buffer):
     transport_protocol = ord(transport_protocol)
     print("Source IP:", print_srcip(buffer))
     print("Destination IP:", print_dstip(buffer))
-    if transport_protocol == 17:
+    transport_protocol = get_constant(transport_protocol)
+    if transport_protocol == "UDP":
         print("UDP")
         print_udp(buffer)
-    elif transport_protocol == 6:
+    elif transport_protocol == "TCP":
         print("TCP")
         print_tcp(buffer)
-    elif transport_protocol == 1:
+    elif transport_protocol == "ICMP":
         print("ICMP", end='')
         print_icmp(buffer)
-    elif transport_protocol == 88:
+    elif transport_protocol == "EIGRP":
         print("EIGRP")
     print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0])
     print()
@@ -332,7 +349,7 @@ def print_ethernet_arp(buffer):
     print()
 
 
-fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/icmp.pcap", "rb")
+fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/eth-8.pcap", "rb")
 frame_number = 0
 byte = fh.read(32)
 while byte:
@@ -354,22 +371,25 @@ while byte:
     ftype = struct.unpack('>H', ftype)
     # print(ftype[0])
     next_frame_offset -= 12
-    if ftype[0] > 1500:
+    if ftype[0] > limit:
         print("Ethernet II", end='')
         print_mac('Source MAC: ', source_address)
         print_mac('Destination MAC: ', destination_address)
         print()
         print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0])
-        if ftype[0] == 2048:
+        ethertype = get_constant(ftype[0])
+        # print(ethertype)
+        if ethertype == "IPV4":
             print_ethernet_ip(buffer)
-        elif ftype[0] == 2054:
+        elif ethertype == "ARP":
             print_ethernet_arp(buffer)
     else:
         print("IEEE ", end='')
         ieee_type = buffer[14:15]
-        if ieee_type[0] == 170:
+        comp = get_constant(ieee_type[0])
+        if comp == "SNAP":
             print("802.3 SNAP", end='')
-        elif ieee_type[0] == 255:
+        elif comp == "RAW":
             print("802.3 Raw", end='')
         else:
             print("802.3 LLC", end='')
