@@ -323,7 +323,7 @@ def print_ethernet_ip(buffer):
         print_icmp(buffer)
     elif transport_protocol == "EIGRP":
         print("EIGRP")
-    print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0])
+    # print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0])
     print()
 
 
@@ -364,8 +364,8 @@ while byte:
     wire = struct.unpack('<I', wire)
     next_frame_offset = wire[0]
     byte = buffer = fh.read(next_frame_offset)
-    destination_address = buffer[6:12]
-    source_address = buffer[0:6]
+    destination_address = buffer[0:6]
+    source_address = buffer[6:12]
     ftype = buffer[12:14]
     ftype = struct.unpack('>H', ftype)
     # print(ftype[0])
