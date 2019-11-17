@@ -11,6 +11,7 @@ telnet = dict()
 ssh = dict()
 ftp_data = dict()
 ftp_control = dict()
+tftp_rec = dict()
 
 FIN = 1
 SYN = 2
@@ -113,6 +114,18 @@ def print_udp(buffer):
             tftp.append(dst_udp_port)
         if src_udp_port in tftp and dst_udp_port in tftp:
             print("TFTP")
+    if dst_udp_port == 69 or src_udp_port == 69 or src_udp_port in tftp or dst_udp_port in tftp:
+        ip_and_port = print_srcip(buffer) + str(src_udp_port) + print_dstip(buffer)
+        reply_ip_and_port = print_dstip(buffer) + str(dst_udp_port) + print_srcip(buffer)
+        print(ip_and_port, reply_ip_and_port)
+        if ip_and_port not in tftp_rec.keys():
+            if reply_ip_and_port not in tftp_rec.keys():
+                tftp_rec[ip_and_port] = list()
+                tftp_rec[ip_and_port].append(frame_number)
+            elif reply_ip_and_port in tftp_rec.keys():
+                tftp_rec[reply_ip_and_port].append(frame_number)
+        elif ip_and_port in tftp_rec.keys():
+            tftp_rec[ip_and_port].append(frame_number)
     if src_udp_port == 53 or dst_udp_port == 53:
         print("DNS")
     if src_udp_port == 137 or dst_udp_port == 137:
@@ -162,6 +175,16 @@ def print_tcp(buffer):
             ftp_data[ip_and_port].append(frame_number)
     elif src_tcp_port == 21 or dst_tcp_port == 21:
         print("FTP-CONTROL")
+        ip_and_port = print_srcip(buffer) + str(src_tcp_port) + print_dstip(buffer) + str(dst_tcp_port)
+        reply_ip_and_port = print_dstip(buffer) + str(dst_tcp_port) + print_srcip(buffer) + str(src_tcp_port)
+        if ip_and_port not in ftp_control.keys():
+            if reply_ip_and_port not in ftp_control.keys():
+                ftp_control[ip_and_port] = list()
+                ftp_control[ip_and_port].append(frame_number)
+            elif reply_ip_and_port in ftp_control.keys():
+                ftp_control[reply_ip_and_port].append(frame_number)
+        elif ip_and_port in ftp_control.keys():
+            ftp_control[ip_and_port].append(frame_number)
     elif src_tcp_port == 22 or dst_tcp_port == 22:
         print("SSH")
         ip_and_port = print_srcip(buffer)+str(src_tcp_port)+print_dstip(buffer)+str(dst_tcp_port)
@@ -271,7 +294,7 @@ def print_ethernet_arp(buffer):
     print()
     pass
 
-fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/trace-12.pcap", "rb")
+fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/eth-9.pcap", "rb")
 frame_number = 0
 byte = fh.read(32)
 while byte:
@@ -572,7 +595,7 @@ else:
     print("No SSH communication recorded.")
 '''
 
-
+'''
 if len(ftp_data) > 0:
     print("FTP-DATA Communication", ftp_data)
     ftp_data_com = 0
@@ -632,6 +655,127 @@ if len(ftp_data) > 0:
             print(), print_bytes(buffer), print()
 else:
     print("No FTP-DATA communication recorded.")
+'''
+
+if len(ftp_control) > 0:
+    print("FTP-CONTROL Communication", ftp_control)
+    ftp_control_com = 0
+    for key in ftp_control.keys():
+        ftp_control_com += 1
+        if len(ftp_control[key]) > 20:
+            ftp_control[key] = ftp_control[key][:10] + ftp_control[key][-10:]
+            print("FTP-CONTROL communication nr.", ftp_control_com,
+                  "contained more than twenty frames, only the first ten and the last ten will be displayed.")
+        else:
+            print("FTP-CONTROL communication nr. ", ftp_control_com)
+        while len(ftp_control[key]) > 0:
+            ftp_control_frame = ftp_control[key].pop(0)
+            fh.seek(0, 0)
+            frame_number = 0
+            byte = fh.read(32)
+            while ftp_control_frame != (frame_number + 1):
+                frame_number += 1
+                if frame_number > 1:
+                    byte = fh.read(8)
+                saved = fh.read(4)
+                saved = struct.unpack('<I', saved)
+                wire = fh.read(4)
+                wire = struct.unpack('<I', wire)
+                next_frame_offset = wire[0]
+                byte = buffer = fh.read(next_frame_offset)
+                next_frame_offset -= 12
+            if frame_number != 0:
+                byte = fh.read(8)
+            saved = fh.read(4)
+            saved = struct.unpack('<I', saved)
+            wire = fh.read(4)
+            wire = struct.unpack('<I', wire)
+            next_frame_offset = wire[0]
+            byte = buffer = fh.read(next_frame_offset)
+            print("Frame :", ftp_control_frame, "\nEthernet II", end='')
+            print_mac('Source MAC: ', buffer[6:12])
+            print_mac('Destination MAC: ', buffer[0:6])
+            ip_info = buffer[14:15]
+            ip_v = int(ord(ip_info) >> 4) & 15
+            ip_hl = int(ord(ip_info)) & 15
+            if ip_v == 4:
+                print("\nIPv4 (IHL", str(ip_hl) + ")")
+            print("Source IP:", print_srcip(buffer))
+            print("Destination IP:", print_dstip(buffer))
+            print("TCP")
+            src_tcp_port = buffer[34:36]
+            src_tcp_port = struct.unpack('>H', src_tcp_port)
+            src_tcp_port = src_tcp_port[0]
+            dst_tcp_port = buffer[36:38]
+            dst_tcp_port = struct.unpack('>H', dst_tcp_port)
+            dst_tcp_port = dst_tcp_port[0]
+            get_tcp_flags(buffer)
+            print("FTP-CONTROL")
+            print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
+            print("File size", saved[0], ", sent by wire", wire[0])
+            print(), print_bytes(buffer), print()
+else:
+    print("No FTP-CONTROL communication recorded.")
+
+
+if len(tftp_rec) > 0:
+    print("TFTP Communication", tftp_rec)
+    tftp_rec_com = 0
+    for key in tftp_rec.keys():
+        tftp_rec_com += 1
+        if len(tftp_rec[key]) > 20:
+            tftp_rec[key] = tftp_rec[key][:10] + tftp_rec[key][-10:]
+            print("TFTP communication nr.", tftp_rec_com,
+                  "contained more than twenty frames, only the first ten and the last ten will be displayed.")
+        else:
+            print("TFTP communication nr. ", tftp_rec_com)
+        while len(tftp_rec[key]) > 0:
+            tftp_rec_frame = tftp_rec[key].pop(0)
+            fh.seek(0, 0)
+            frame_number = 0
+            byte = fh.read(32)
+            while tftp_rec_frame != (frame_number + 1):
+                frame_number += 1
+                if frame_number > 1:
+                    byte = fh.read(8)
+                saved = fh.read(4)
+                saved = struct.unpack('<I', saved)
+                wire = fh.read(4)
+                wire = struct.unpack('<I', wire)
+                next_frame_offset = wire[0]
+                byte = buffer = fh.read(next_frame_offset)
+                next_frame_offset -= 12
+            if frame_number != 0:
+                byte = fh.read(8)
+            saved = fh.read(4)
+            saved = struct.unpack('<I', saved)
+            wire = fh.read(4)
+            wire = struct.unpack('<I', wire)
+            next_frame_offset = wire[0]
+            byte = buffer = fh.read(next_frame_offset)
+            print("Frame :", tftp_rec_frame, "\nEthernet II", end='')
+            print_mac('Source MAC: ', buffer[6:12])
+            print_mac('Destination MAC: ', buffer[0:6])
+            ip_info = buffer[14:15]
+            ip_v = int(ord(ip_info) >> 4) & 15
+            ip_hl = int(ord(ip_info)) & 15
+            if ip_v == 4:
+                print("\nIPv4 (IHL", str(ip_hl) + ")")
+            print("Source IP:", print_srcip(buffer))
+            print("Destination IP:", print_dstip(buffer))
+            print("UDP")
+            src_udp_port = buffer[34:36]
+            src_udp_port = struct.unpack('>H', src_udp_port)
+            src_udp_port = src_udp_port[0]
+            dst_udp_port = buffer[36:38]
+            dst_udp_port = struct.unpack('>H', dst_udp_port)
+            dst_udp_port = dst_udp_port[0]
+            print("TFTP")
+            print("Source port: ", src_udp_port, "\nDestination port: ", dst_udp_port, sep='')
+            print("File size", saved[0], ", sent by wire", wire[0])
+            print(), print_bytes(buffer), print()
+else:
+    print("No TFTP communication recorded.")
 
 
 '''arp_com = 0
