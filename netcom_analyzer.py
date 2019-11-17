@@ -6,7 +6,13 @@ ip_addresses = list()
 ip_rank = dict()
 arp_rank = dict()
 http = dict()
+telnet = dict()
 
+FIN = 1
+SYN = 2
+RST = 4
+PSH = 8
+ACK = 16
 
 def print_bytes(buffer):
     line_length = 0
@@ -111,6 +117,24 @@ def print_udp(buffer):
     pass
 
 
+def get_tcp_flags(buffer):
+    tcp_flags = buffer[47:48]
+    tcp_flags = struct.unpack('>B', tcp_flags)
+    tcp_flags = tcp_flags[0]
+    flag_status = "Flags: "
+    if tcp_flags & FIN:
+        flag_status += "[FIN] "
+    elif tcp_flags & SYN:
+        flag_status += "[SYN] "
+    elif tcp_flags & RST:
+        flag_status += "[RST] "
+    elif tcp_flags & PSH:
+        flag_status += "[PSH] "
+    elif tcp_flags & ACK:
+        flag_status += "[ACK]"
+    print(flag_status)
+
+
 def print_tcp(buffer):
     src_tcp_port = buffer[34:36]
     src_tcp_port = struct.unpack('>H', src_tcp_port)
@@ -128,6 +152,17 @@ def print_tcp(buffer):
         print("SSH")
     elif src_tcp_port == 23 or dst_tcp_port == 23:
         print("TELNET")
+        ip_and_port = print_srcip(buffer) + str(src_tcp_port) + print_dstip(buffer) + str(dst_tcp_port)
+        reply_ip_and_port = print_dstip(buffer) + str(dst_tcp_port) + print_srcip(buffer) + str(src_tcp_port)
+        # print(ip_and_port)
+        if ip_and_port not in telnet.keys():
+            if reply_ip_and_port not in telnet.keys():
+                telnet[ip_and_port] = list()
+                telnet[ip_and_port].append(frame_number)
+            elif reply_ip_and_port in telnet.keys():
+                telnet[reply_ip_and_port].append(frame_number)
+        elif ip_and_port in telnet.keys():
+            telnet[ip_and_port].append(frame_number)
     elif src_tcp_port == 80 or dst_tcp_port == 80:
         print("HTTP")
         ip_and_port = print_srcip(buffer)+str(src_tcp_port)+print_dstip(buffer)+str(dst_tcp_port)
@@ -202,7 +237,7 @@ def print_ethernet_arp(buffer):
     print()
     pass
 
-fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/trace-8.pcap", "rb")
+fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/telnet-raw.pcap", "rb")
 frame_number = 0
 byte = fh.read(32)
 while byte:
@@ -247,23 +282,38 @@ print("IP addresses of sending nodes:")
 for ipv4 in ip_rank.keys():
     print(ipv4)
 sorted_ip_rank = sorted(ip_rank.items(), key=lambda kv: kv[1], reverse=True)
-# print(sorted_ip_rank)
-print("\nHighest number of packets (", sorted_ip_rank[0][1], ") was sent by ", sorted_ip_rank[0][0], sep='')
+if len(sorted_ip_rank) > 0:
+    print("\nHighest number of packets (", sorted_ip_rank[0][1], ") was sent by ", sorted_ip_rank[0][0], sep='')
 print(arp_rank)
 
-print("HTTP Communication",http)
-http_com = 0
-for key in http.keys():
-    http_com += 1
-    print("HTTP communication nr. ", http_com)
-    while len(http[key]) > 0:
-        http_frame = http[key].pop(0)
-        fh.seek(0, 0)
-        frame_number = 0
-        byte = fh.read(32)
-        while http_frame != (frame_number + 1):
-            frame_number += 1
-            if frame_number > 1:
+if len(http) > 0:
+    print("HTTP Communication", http)
+    http_com = 0
+    for key in http.keys():
+        http_com += 1
+        if len(http[key]) > 2:
+            http[key] = http[key][:10] + http[key][-10:]
+            print("HTTP communication nr.", http_com,
+                  "contained more than twenty frames, only the first ten and the last ten will be displayed.")
+        else:
+            print("HTTP communication nr. ", http_com)
+        while len(http[key]) > 0:
+            http_frame = http[key].pop(0)
+            fh.seek(0, 0)
+            frame_number = 0
+            byte = fh.read(32)
+            while http_frame != (frame_number + 1):
+                frame_number += 1
+                if frame_number > 1:
+                    byte = fh.read(8)
+                saved = fh.read(4)
+                saved = struct.unpack('<I', saved)
+                wire = fh.read(4)
+                wire = struct.unpack('<I', wire)
+                next_frame_offset = wire[0]
+                byte = buffer = fh.read(next_frame_offset)
+                next_frame_offset -= 12
+            if frame_number != 0:
                 byte = fh.read(8)
             saved = fh.read(4)
             saved = struct.unpack('<I', saved)
@@ -271,36 +321,90 @@ for key in http.keys():
             wire = struct.unpack('<I', wire)
             next_frame_offset = wire[0]
             byte = buffer = fh.read(next_frame_offset)
-            next_frame_offset -= 12
-        if frame_number != 0:
-            byte = fh.read(8)
-        saved = fh.read(4)
-        saved = struct.unpack('<I', saved)
-        wire = fh.read(4)
-        wire = struct.unpack('<I', wire)
-        next_frame_offset = wire[0]
-        byte = buffer = fh.read(next_frame_offset)
-        print("Frame :", http_frame, "\nEthernet II", end='')
-        print_mac('Source MAC: ', buffer[6:12])
-        print_mac('Destination MAC: ', buffer[0:6])
-        ip_info = buffer[14:15]
-        ip_v = int(ord(ip_info) >> 4) & 15
-        ip_hl = int(ord(ip_info)) & 15
-        if ip_v == 4:
-            print("\nIPv4 (IHL", str(ip_hl) + ")")
-        print("Source IP:", print_srcip(buffer))
-        print("Destination IP:", print_dstip(buffer))
-        print("TCP")
-        src_tcp_port = buffer[34:36]
-        src_tcp_port = struct.unpack('>H', src_tcp_port)
-        src_tcp_port = src_tcp_port[0]
-        dst_tcp_port = buffer[36:38]
-        dst_tcp_port = struct.unpack('>H', dst_tcp_port)
-        dst_tcp_port = dst_tcp_port[0]
-        print("HTTP")
-        print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
-        print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0])
-        print()
+            print("Frame :", http_frame, "\nEthernet II", end='')
+            print_mac('Source MAC: ', buffer[6:12])
+            print_mac('Destination MAC: ', buffer[0:6])
+            ip_info = buffer[14:15]
+            ip_v = int(ord(ip_info) >> 4) & 15
+            ip_hl = int(ord(ip_info)) & 15
+            if ip_v == 4:
+                print("\nIPv4 (IHL", str(ip_hl) + ")")
+            print("Source IP:", print_srcip(buffer))
+            print("Destination IP:", print_dstip(buffer))
+            print("TCP")
+            src_tcp_port = buffer[34:36]
+            src_tcp_port = struct.unpack('>H', src_tcp_port)
+            src_tcp_port = src_tcp_port[0]
+            dst_tcp_port = buffer[36:38]
+            dst_tcp_port = struct.unpack('>H', dst_tcp_port)
+            dst_tcp_port = dst_tcp_port[0]
+            get_tcp_flags(buffer)
+            print("HTTP")
+            print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
+            print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0])
+            print(), print_bytes(buffer), print()
+else:
+    print("No HTTP communication recorded.")
+
+
+if len(telnet) > 0:
+    print("TELNET Communication", telnet)
+    telnet_com = 0
+    for key in telnet.keys():
+        telnet_com += 1
+        if len(telnet[key]) > 2:
+            telnet[key] = telnet[key][:10] + telnet[key][-10:]
+            print("TELNET communication nr.", telnet_com, "contained more than twenty frames, only the first ten and the last ten will be displayed.")
+        else:
+            print("TELNET communication nr. ", telnet_com)
+        while len(telnet[key]) > 0:
+            telnet_frame = telnet[key].pop(0)
+            fh.seek(0, 0)
+            frame_number = 0
+            byte = fh.read(32)
+            while telnet_frame != (frame_number + 1):
+                frame_number += 1
+                if frame_number > 1:
+                    byte = fh.read(8)
+                saved = fh.read(4)
+                saved = struct.unpack('<I', saved)
+                wire = fh.read(4)
+                wire = struct.unpack('<I', wire)
+                next_frame_offset = wire[0]
+                byte = buffer = fh.read(next_frame_offset)
+                next_frame_offset -= 12
+            if frame_number != 0:
+                byte = fh.read(8)
+            saved = fh.read(4)
+            saved = struct.unpack('<I', saved)
+            wire = fh.read(4)
+            wire = struct.unpack('<I', wire)
+            next_frame_offset = wire[0]
+            byte = buffer = fh.read(next_frame_offset)
+            print("Frame :", telnet_frame, "\nEthernet II", end='')
+            print_mac('Source MAC: ', buffer[6:12])
+            print_mac('Destination MAC: ', buffer[0:6])
+            ip_info = buffer[14:15]
+            ip_v = int(ord(ip_info) >> 4) & 15
+            ip_hl = int(ord(ip_info)) & 15
+            if ip_v == 4:
+                print("\nIPv4 (IHL", str(ip_hl) + ")")
+            print("Source IP:", print_srcip(buffer))
+            print("Destination IP:", print_dstip(buffer))
+            print("TCP")
+            src_tcp_port = buffer[34:36]
+            src_tcp_port = struct.unpack('>H', src_tcp_port)
+            src_tcp_port = src_tcp_port[0]
+            dst_tcp_port = buffer[36:38]
+            dst_tcp_port = struct.unpack('>H', dst_tcp_port)
+            dst_tcp_port = dst_tcp_port[0]
+            get_tcp_flags(buffer)
+            print("TELNET")
+            print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
+            print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0])
+            print(), print_bytes(buffer), print()
+else:
+    print("No TELNET communication recorded.")
 
 
 '''arp_com = 0
