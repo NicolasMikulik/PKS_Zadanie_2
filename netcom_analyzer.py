@@ -332,7 +332,7 @@ def print_ethernet_arp(buffer):
     dst_mac_record = read_mac(buffer[0:6])
     mac_and_ip = src_mac_record + print_arp_srcip(buffer) + print_arp_dstip(buffer)
     reply_mac_and_ip = dst_mac_record + print_arp_dstip(buffer) + print_arp_srcip(buffer)
-    print("MAC and IP", mac_and_ip, "REPLY MAC and IP", reply_mac_and_ip)
+    # print("MAC and IP", mac_and_ip, "REPLY MAC and IP", reply_mac_and_ip)
     if mac_and_ip not in arp_rank.keys():
         if dst_mac_record == 'ffffffffffff':
             arp_rank[mac_and_ip] = list()
@@ -345,11 +345,10 @@ def print_ethernet_arp(buffer):
                 arp_rank[mac_and_ip].append(frame_number)
     elif mac_and_ip in arp_rank.keys() and dst_mac_record == 'ffffffffffff' and arp_rank[mac_and_ip].count(frame_number)<=0:
         arp_rank[mac_and_ip].append(frame_number)
-    print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0])
     print()
 
 
-fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/eth-8.pcap", "rb")
+fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/trace-24.pcap", "rb")
 frame_number = 0
 byte = fh.read(32)
 while byte:
@@ -382,6 +381,7 @@ while byte:
         if ethertype == "IPV4":
             print_ethernet_ip(buffer)
         elif ethertype == "ARP":
+            print("ARP")
             print_ethernet_arp(buffer)
     else:
         print("IEEE ", end='')
