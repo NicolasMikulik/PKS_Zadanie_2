@@ -132,7 +132,7 @@ def print_tcp(buffer):
         print("HTTP")
         ip_and_port = print_srcip(buffer)+str(src_tcp_port)+print_dstip(buffer)+str(dst_tcp_port)
         reply_ip_and_port = print_dstip(buffer)+str(dst_tcp_port)+print_srcip(buffer)+str(src_tcp_port)
-        print(ip_and_port)
+        # print(ip_and_port)
         if ip_and_port not in http.keys():
             if reply_ip_and_port not in http.keys():
                 http[ip_and_port] = list()
@@ -257,8 +257,52 @@ for key in http.keys():
     http_com += 1
     print("HTTP communication nr. ", http_com)
     while len(http[key]) > 0:
-        print("HTTP COM", http_com)
-        http[key].pop(0)
+        http_frame = http[key].pop(0)
+        fh.seek(0, 0)
+        frame_number = 0
+        byte = fh.read(32)
+        while http_frame != (frame_number + 1):
+            frame_number += 1
+            if frame_number > 1:
+                byte = fh.read(8)
+            saved = fh.read(4)
+            saved = struct.unpack('<I', saved)
+            wire = fh.read(4)
+            wire = struct.unpack('<I', wire)
+            next_frame_offset = wire[0]
+            byte = buffer = fh.read(next_frame_offset)
+            next_frame_offset -= 12
+        if frame_number != 0:
+            byte = fh.read(8)
+        saved = fh.read(4)
+        saved = struct.unpack('<I', saved)
+        wire = fh.read(4)
+        wire = struct.unpack('<I', wire)
+        next_frame_offset = wire[0]
+        byte = buffer = fh.read(next_frame_offset)
+        print("Frame :", http_frame, "\nEthernet II", end='')
+        print_mac('Source MAC: ', buffer[6:12])
+        print_mac('Destination MAC: ', buffer[0:6])
+        ip_info = buffer[14:15]
+        ip_v = int(ord(ip_info) >> 4) & 15
+        ip_hl = int(ord(ip_info)) & 15
+        if ip_v == 4:
+            print("\nIPv4 (IHL", str(ip_hl) + ")")
+        print("Source IP:", print_srcip(buffer))
+        print("Destination IP:", print_dstip(buffer))
+        print("TCP")
+        src_tcp_port = buffer[34:36]
+        src_tcp_port = struct.unpack('>H', src_tcp_port)
+        src_tcp_port = src_tcp_port[0]
+        dst_tcp_port = buffer[36:38]
+        dst_tcp_port = struct.unpack('>H', dst_tcp_port)
+        dst_tcp_port = dst_tcp_port[0]
+        print("HTTP")
+        print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
+        print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0])
+        print()
+
+
 '''arp_com = 0
 for key in arp_rank.keys():
     arp_com += 1
