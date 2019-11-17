@@ -8,6 +8,7 @@ arp_rank = dict()
 http = dict()
 https = dict()
 telnet = dict()
+ssh = dict()
 
 FIN = 1
 SYN = 2
@@ -151,6 +152,17 @@ def print_tcp(buffer):
         print("FTP-CONTROL")
     elif src_tcp_port == 22 or dst_tcp_port == 22:
         print("SSH")
+        ip_and_port = print_srcip(buffer)+str(src_tcp_port)+print_dstip(buffer)+str(dst_tcp_port)
+        reply_ip_and_port = print_dstip(buffer)+str(dst_tcp_port)+print_srcip(buffer)+str(src_tcp_port)
+        # print(ip_and_port)
+        if ip_and_port not in ssh.keys():
+            if reply_ip_and_port not in ssh.keys():
+                ssh[ip_and_port] = list()
+                ssh[ip_and_port].append(frame_number)
+            elif reply_ip_and_port in ssh.keys():
+                ssh[reply_ip_and_port].append(frame_number)
+        elif ip_and_port in ssh.keys():
+            ssh[ip_and_port].append(frame_number)
     elif src_tcp_port == 23 or dst_tcp_port == 23:
         print("TELNET")
         ip_and_port = print_srcip(buffer) + str(src_tcp_port) + print_dstip(buffer) + str(dst_tcp_port)
@@ -248,7 +260,7 @@ def print_ethernet_arp(buffer):
     print()
     pass
 
-fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/trace-12.pcap", "rb")
+fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/SSHv2.cap", "rb")
 frame_number = 0
 byte = fh.read(32)
 while byte:
@@ -423,6 +435,69 @@ if len(https) > 0:
             print(), print_bytes(buffer), print()
 else:
     print("No HTTPS communication recorded.")
+
+
+if len(ssh) > 0:
+    print("SSH Communication", ssh)
+    ssh_com = 0
+    for key in ssh.keys():
+        ssh_com += 1
+        if len(ssh[key]) > 2:
+            ssh[key] = ssh[key][:10] + ssh[key][-10:]
+            print("SSH communication nr.", ssh_com,
+                  "contained more than twenty frames, only the first ten and the last ten will be displayed.")
+        else:
+            print("SSH communication nr. ", ssh_com)
+        while len(ssh[key]) > 0:
+            ssh_frame = ssh[key].pop(0)
+            fh.seek(0, 0)
+            frame_number = 0
+            byte = fh.read(32)
+            while ssh_frame != (frame_number + 1):
+                frame_number += 1
+                if frame_number > 1:
+                    byte = fh.read(8)
+                saved = fh.read(4)
+                saved = struct.unpack('<I', saved)
+                wire = fh.read(4)
+                wire = struct.unpack('<I', wire)
+                next_frame_offset = wire[0]
+                byte = buffer = fh.read(next_frame_offset)
+                next_frame_offset -= 12
+            if frame_number != 0:
+                byte = fh.read(8)
+            saved = fh.read(4)
+            saved = struct.unpack('<I', saved)
+            wire = fh.read(4)
+            wire = struct.unpack('<I', wire)
+            next_frame_offset = wire[0]
+            byte = buffer = fh.read(next_frame_offset)
+            print("Frame :", ssh_frame, "\nEthernet II", end='')
+            print_mac('Source MAC: ', buffer[6:12])
+            print_mac('Destination MAC: ', buffer[0:6])
+            ip_info = buffer[14:15]
+            ip_v = int(ord(ip_info) >> 4) & 15
+            ip_hl = int(ord(ip_info)) & 15
+            if ip_v == 4:
+                print("\nIPv4 (IHL", str(ip_hl) + ")")
+            print("Source IP:", print_srcip(buffer))
+            print("Destination IP:", print_dstip(buffer))
+            print("TCP")
+            src_tcp_port = buffer[34:36]
+            src_tcp_port = struct.unpack('>H', src_tcp_port)
+            src_tcp_port = src_tcp_port[0]
+            dst_tcp_port = buffer[36:38]
+            dst_tcp_port = struct.unpack('>H', dst_tcp_port)
+            dst_tcp_port = dst_tcp_port[0]
+            get_tcp_flags(buffer)
+            print("SSH")
+            print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
+            print("File size", saved[0], ", sent by wire", wire[0])
+            print(), print_bytes(buffer), print()
+else:
+    print("No SSH communication recorded.")
+
+
 
 '''
 if len(telnet) > 0:
