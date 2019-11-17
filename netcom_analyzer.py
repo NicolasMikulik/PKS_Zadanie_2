@@ -6,6 +6,7 @@ ip_addresses = list()
 ip_rank = dict()
 arp_rank = dict()
 http = dict()
+https = dict()
 telnet = dict()
 
 FIN = 1
@@ -124,13 +125,13 @@ def get_tcp_flags(buffer):
     flag_status = "Flags: "
     if tcp_flags & FIN:
         flag_status += "[FIN] "
-    elif tcp_flags & SYN:
+    if tcp_flags & SYN:
         flag_status += "[SYN] "
-    elif tcp_flags & RST:
+    if tcp_flags & RST:
         flag_status += "[RST] "
-    elif tcp_flags & PSH:
+    if tcp_flags & PSH:
         flag_status += "[PSH] "
-    elif tcp_flags & ACK:
+    if tcp_flags & ACK:
         flag_status += "[ACK]"
     print(flag_status)
 
@@ -178,6 +179,16 @@ def print_tcp(buffer):
             http[ip_and_port].append(frame_number)
     elif src_tcp_port == 443 or dst_tcp_port == 443:
         print("HTTPS")
+        ip_and_port = print_srcip(buffer) + str(src_tcp_port) + print_dstip(buffer) + str(dst_tcp_port)
+        reply_ip_and_port = print_dstip(buffer) + str(dst_tcp_port) + print_srcip(buffer) + str(src_tcp_port)
+        if ip_and_port not in https.keys():
+            if reply_ip_and_port not in https.keys():
+                https[ip_and_port] = list()
+                https[ip_and_port].append(frame_number)
+            elif reply_ip_and_port in https.keys():
+                https[reply_ip_and_port].append(frame_number)
+        elif ip_and_port in https.keys():
+            https[ip_and_port].append(frame_number)
     print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
     pass
 
@@ -207,7 +218,7 @@ def print_ethernet_ip(buffer):
         print("ICMP")
     elif transport_protocol == 88:
         print("EIGRP")
-    print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0])
+    print("File size", saved[0], ", sent by wire", wire[0])
     print()
     pass
 
@@ -233,11 +244,11 @@ def print_ethernet_arp(buffer):
                 arp_rank[mac_and_ip].append(frame_number)
     elif mac_and_ip in arp_rank.keys() and dst_mac_record == 'ffffffffffff' and arp_rank[mac_and_ip].count(frame_number)<=0:
         arp_rank[mac_and_ip].append(frame_number)
-    print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0])
+    print("File size", saved[0], ", sent by wire", wire[0])
     print()
     pass
 
-fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/telnet-raw.pcap", "rb")
+fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/trace-12.pcap", "rb")
 frame_number = 0
 byte = fh.read(32)
 while byte:
@@ -275,7 +286,7 @@ while byte:
         print_mac('Source MAC: ', source_address)
         print_mac('Destination MAC: ', destination_address)
         print()
-        print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0])
+        print("File size", saved[0], ", sent by wire", wire[0])
     print_bytes(buffer)
     print()
 print("IP addresses of sending nodes:")
@@ -286,6 +297,7 @@ if len(sorted_ip_rank) > 0:
     print("\nHighest number of packets (", sorted_ip_rank[0][1], ") was sent by ", sorted_ip_rank[0][0], sep='')
 print(arp_rank)
 
+'''
 if len(http) > 0:
     print("HTTP Communication", http)
     http_com = 0
@@ -341,12 +353,78 @@ if len(http) > 0:
             get_tcp_flags(buffer)
             print("HTTP")
             print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
-            print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0])
+            print("File size", saved[0], ", sent by wire", wire[0])
             print(), print_bytes(buffer), print()
 else:
     print("No HTTP communication recorded.")
+'''
 
+if len(https) > 0:
+    print("HTTPS Communication", https)
+    https_com = 0
+    for key in https.keys():
+        https_com += 1
+        if len(https[key]) > 2:
+            https[key] = https[key][:10] + https[key][-10:]
+            print("HTTPS communication nr.", https_com,
+                  "contained more than twenty frames, only the first ten and the last ten will be displayed.")
+        else:
+            print("HTTPS communication nr. ", https_com)
+        while len(https[key]) > 0:
+            https_frame = https[key].pop(0)
+            fh.seek(0, 0)
+            frame_number = 0
+            byte = fh.read(32)
+            while https_frame != (frame_number + 1):
+                frame_number += 1
+                if frame_number > 1:
+                    byte = fh.read(8)
+                saved = fh.read(4)
+                saved = struct.unpack('<I', saved)
+                wire = fh.read(4)
+                wire = struct.unpack('<I', wire)
+                next_frame_offset = wire[0]
+                byte = buffer = fh.read(next_frame_offset)
+                next_frame_offset -= 12
+            if frame_number != 0:
+                byte = fh.read(8)
+            saved = fh.read(4)
+            saved = struct.unpack('<I', saved)
+            wire = fh.read(4)
+            wire = struct.unpack('<I', wire)
+            next_frame_offset = wire[0]
+            byte = buffer = fh.read(next_frame_offset)
+            print("Frame :", https_frame, "\nEthernet II", end='')
+            print_mac('Source MAC: ', buffer[6:12])
+            print_mac('Destination MAC: ', buffer[0:6])
+            ip_info = buffer[14:15]
+            ip_v = int(ord(ip_info) >> 4) & 15
+            ip_hl = int(ord(ip_info)) & 15
+            if ip_v == 4:
+                print("\nIPv4 (IHL", str(ip_hl) + ")")
+            print("Source IP:", print_srcip(buffer))
+            print("Destination IP:", print_dstip(buffer))
+            print("TCP")
+            src_tcp_port = buffer[34:36]
+            src_tcp_port = struct.unpack('>H', src_tcp_port)
+            src_tcp_port = src_tcp_port[0]
+            dst_tcp_port = buffer[36:38]
+            dst_tcp_port = struct.unpack('>H', dst_tcp_port)
+            dst_tcp_port = dst_tcp_port[0]
+            get_tcp_flags(buffer)
+            if len(buffer) >= 55:
+                content_type = buffer[54]
+                if content_type == 23:
+                    print("HTTPS over TSL - Sending application data")
+                else:
+                    print("HTTPS")
+            print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
+            print("File size", saved[0], ", sent by wire", wire[0])
+            print(), print_bytes(buffer), print()
+else:
+    print("No HTTPS communication recorded.")
 
+'''
 if len(telnet) > 0:
     print("TELNET Communication", telnet)
     telnet_com = 0
@@ -401,11 +479,11 @@ if len(telnet) > 0:
             get_tcp_flags(buffer)
             print("TELNET")
             print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
-            print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0])
+            print("File size", saved[0], ", sent by wire", wire[0])
             print(), print_bytes(buffer), print()
 else:
     print("No TELNET communication recorded.")
-
+'''
 
 '''arp_com = 0
 for key in arp_rank.keys():
@@ -444,7 +522,7 @@ for key in arp_rank.keys():
             print("Sender IP: ", print_arp_srcip(buffer), end='')
             print(", Target IP: ", print_arp_dstip(buffer), end='')
             print("\nFRAME :", frame_number + 1)
-            print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0], "\nEthernet II - ARP", end='')
+            print("File size", saved[0], ", sent by wire", wire[0], "\nEthernet II - ARP", end='')
             source_address = buffer[6:12]
             destination_address = buffer[0:6]
             print_mac('Source MAC: ', source_address)
@@ -458,7 +536,7 @@ for key in arp_rank.keys():
             print(", Target IP: ", print_arp_dstip(buffer), end='')
             print_arp_dstip(buffer)
             print("\nFRAME :", frame_number + 1)
-            print("File size", saved[0], ", sent by wire", wire[0], ", type", ftype[0], "\nEthernet II - ARP", end='')
+            print("File size", saved[0], ", sent by wire", wire[0], "\nEthernet II - ARP", end='')
             source_address = buffer[6:12]
             destination_address = buffer[0:6]
             print_mac('Source MAC: ', source_address)
