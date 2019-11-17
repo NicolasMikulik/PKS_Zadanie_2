@@ -64,9 +64,7 @@ def print_srcip(buffer):
     src_ip2 = buffer[27:28]
     src_ip3 = buffer[28:29]
     src_ip4 = buffer[29:30]
-    # print("Source IP: ", end='')
     source_ip = str(ord(src_ip1)) + '.' + str(ord(src_ip2)) + '.' + str(ord(src_ip3)) + '.' + str(ord(src_ip4))
-    # print(source_ip)
     if source_ip not in ip_addresses:
         ip_addresses.append(source_ip)
     if source_ip not in ip_rank.keys():
@@ -81,9 +79,7 @@ def print_dstip(buffer):
     dst_ip2 = buffer[31:32]
     dst_ip3 = buffer[32:33]
     dst_ip4 = buffer[33:34]
-    # print("Destination IP: ", end='')
     destination_ip = str(ord(dst_ip1))+'.'+str(ord(dst_ip2))+'.'+str(ord(dst_ip3))+'.'+str(ord(dst_ip4))
-    # print(destination_ip)
     return destination_ip
 
 
@@ -134,7 +130,17 @@ def print_tcp(buffer):
         print("TELNET")
     elif src_tcp_port == 80 or dst_tcp_port == 80:
         print("HTTP")
-
+        ip_and_port = print_srcip(buffer)+str(src_tcp_port)+print_dstip(buffer)+str(dst_tcp_port)
+        reply_ip_and_port = print_dstip(buffer)+str(dst_tcp_port)+print_srcip(buffer)+str(src_tcp_port)
+        print(ip_and_port)
+        if ip_and_port not in http.keys():
+            if reply_ip_and_port not in http.keys():
+                http[ip_and_port] = list()
+                http[ip_and_port].append(frame_number)
+            elif reply_ip_and_port in http.keys():
+                http[reply_ip_and_port].append(frame_number)
+        elif ip_and_port in http.keys():
+            http[ip_and_port].append(frame_number)
     elif src_tcp_port == 443 or dst_tcp_port == 443:
         print("HTTPS")
     print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
@@ -156,8 +162,6 @@ def print_ethernet_ip(buffer):
     transport_protocol = ord(transport_protocol)
     print("Source IP:", print_srcip(buffer))
     print("Destination IP:", print_dstip(buffer))
-    print_srcip(buffer)
-    print_dstip(buffer)
     if transport_protocol == 17:
         print("UDP")
         print_udp(buffer)
@@ -198,7 +202,7 @@ def print_ethernet_arp(buffer):
     print()
     pass
 
-fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/trace-24.pcap", "rb")
+fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/trace-8.pcap", "rb")
 frame_number = 0
 byte = fh.read(32)
 while byte:
@@ -247,7 +251,15 @@ sorted_ip_rank = sorted(ip_rank.items(), key=lambda kv: kv[1], reverse=True)
 print("\nHighest number of packets (", sorted_ip_rank[0][1], ") was sent by ", sorted_ip_rank[0][0], sep='')
 print(arp_rank)
 
-arp_com = 0
+print("HTTP Communication",http)
+http_com = 0
+for key in http.keys():
+    http_com += 1
+    print("HTTP communication nr. ", http_com)
+    while len(http[key]) > 0:
+        print("HTTP COM", http_com)
+        http[key].pop(0)
+'''arp_com = 0
 for key in arp_rank.keys():
     arp_com += 1
     print("ARP communication nr. ", arp_com)
@@ -303,7 +315,7 @@ for key in arp_rank.keys():
             destination_address = buffer[0:6]
             print_mac('Source MAC: ', source_address)
             print_mac('Destination MAC: ', destination_address)
-            print(), print_bytes(buffer), print()
+            print(), print_bytes(buffer), print()'''
 
 
 fh.close()
