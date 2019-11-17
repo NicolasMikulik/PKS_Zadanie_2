@@ -132,7 +132,6 @@ def print_udp(buffer):
     if src_udp_port == 137 or dst_udp_port == 137:
         print("NetBIOS Name Service")
     print("Source port: ", src_udp_port, "\nDestination port: ", dst_udp_port, sep='')
-    pass
 
 
 def get_tcp_flags(buffer):
@@ -268,40 +267,10 @@ def get_icmp_type(buffer):
     elif icmp_type == 30:
         icmp_type_display += "Traceroute"
     print(icmp_type_display)
-    pass
 
 
 def print_icmp(buffer):
     get_icmp_type(buffer)
-    '''icmp_type = buffer[34]
-    icmp_type_display = "ICMP type: "
-    if icmp_type == 0:
-        icmp_type_display += "Reply"
-    elif icmp_type == 3:
-        icmp_type_display += "Destination Unreachable"
-        icmp_code = buffer[35]
-        if icmp_code == 0:
-            icmp_type_display += " - Net Unreachable"
-        if icmp_code == 1:
-            icmp_type_display += " - Host Unreachable"
-        if icmp_code == 2:
-            icmp_type_display += " - Protocol Unreachable"
-        if icmp_code == 3:
-            icmp_type_display += " - Port Unreachable"
-    elif icmp_type == 5:
-        icmp_type_display += "Redirect"
-    elif icmp_type == 8:
-        icmp_type_display += "Request"
-    elif icmp_type == 11:
-        icmp_type_display += "Time Exceeded"
-        icmp_code = buffer[35]
-        if icmp_code == 0:
-            icmp_type_display += " - Time to Live exceeded in Transit"
-        elif icmp_code == 1:
-            icmp_type_display += " - Fragment Reassembly Time Exceeded"
-    elif icmp_type == 30:
-        icmp_type_display += "Traceroute"
-    print(icmp_type_display)'''
     icmp_seq_num = buffer[40:42]
     icmp_seq_num = struct.unpack('>H', icmp_seq_num)
     icmp_seq_num = icmp_seq_num[0]
@@ -317,14 +286,9 @@ def print_icmp(buffer):
         icmp[ip_and_seqn].append(frame_number)
 
 def print_ethernet_ip(buffer):
-    '''print("Ethernet II", end='')
-    print_mac('Source MAC: ', buffer[6:12])
-    print_mac('Destination MAC: ', buffer[0:6])'''
-
     ip_info = buffer[14:15]
     ip_v = int(ord(ip_info) >> 4) & 15
     ip_hl = int(ord(ip_info)) & 15
-    # print("\n", ord(ip_info))
     if ip_v == 4:
         print("\nIPv4 (IHL", str(ip_hl) + ")")
     transport_protocol = buffer[23:24]
@@ -344,13 +308,9 @@ def print_ethernet_ip(buffer):
         print("EIGRP")
     print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0])
     print()
-    pass
 
 
 def print_ethernet_arp(buffer):
-    '''print("Ethernet II\nARP", end='')
-    print_mac('Source MAC: ', buffer[6:12])
-    print_mac('Destination MAC: ', buffer[0:6])'''
     src_mac_record = read_mac(buffer[6:12])
     dst_mac_record = read_mac(buffer[0:6])
     mac_and_ip = src_mac_record + print_arp_srcip(buffer) + print_arp_dstip(buffer)
@@ -370,7 +330,7 @@ def print_ethernet_arp(buffer):
         arp_rank[mac_and_ip].append(frame_number)
     print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0])
     print()
-    pass
+
 
 fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/icmp.pcap", "rb")
 frame_number = 0
@@ -425,9 +385,8 @@ for ipv4 in ip_rank.keys():
 sorted_ip_rank = sorted(ip_rank.items(), key=lambda kv: kv[1], reverse=True)
 if len(sorted_ip_rank) > 0:
     print("\nHighest number of packets (", sorted_ip_rank[0][1], ") was sent by ", sorted_ip_rank[0][0], sep='')
-print(arp_rank)
 
-'''
+
 if len(http) > 0:
     print("HTTP Communication", http)
     http_com = 0
@@ -487,7 +446,7 @@ if len(http) > 0:
             print(), print_bytes(buffer), print()
 else:
     print("No HTTP communication recorded.")
-'''
+
 
 if len(https) > 0:
     print("HTTPS Communication", https)
@@ -555,7 +514,6 @@ else:
     print("No HTTPS communication recorded.")
 
 
-'''
 if len(telnet) > 0:
     print("TELNET Communication", telnet)
     telnet_com = 0
@@ -614,10 +572,8 @@ if len(telnet) > 0:
             print(), print_bytes(buffer), print()
 else:
     print("No TELNET communication recorded.")
-'''
 
 
-'''
 if len(ssh) > 0:
     print("SSH Communication", ssh)
     ssh_com = 0
@@ -677,9 +633,8 @@ if len(ssh) > 0:
             print(), print_bytes(buffer), print()
 else:
     print("No SSH communication recorded.")
-'''
 
-'''
+
 if len(ftp_data) > 0:
     print("FTP-DATA Communication", ftp_data)
     ftp_data_com = 0
@@ -739,7 +694,7 @@ if len(ftp_data) > 0:
             print(), print_bytes(buffer), print()
 else:
     print("No FTP-DATA communication recorded.")
-'''
+
 
 if len(ftp_control) > 0:
     print("FTP-CONTROL Communication", ftp_control)
@@ -907,14 +862,16 @@ if len(icmp) > 0:
                 print("\nIPv4 (IHL", str(ip_hl) + ")")
             print("Source IP:", print_srcip(buffer))
             print("Destination IP:", print_dstip(buffer))
-            print("ICMP")
+            print("ICMP", end='')
+            get_icmp_type(buffer)
             print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0])
             print(), print_bytes(buffer), print()
 else:
     print("No ICMP communication recorded.")
 
 
-'''arp_com = 0
+print(arp_rank)
+arp_com = 0
 for key in arp_rank.keys():
     arp_com += 1
     print("ARP communication nr. ", arp_com)
@@ -970,7 +927,7 @@ for key in arp_rank.keys():
             destination_address = buffer[0:6]
             print_mac('Source MAC: ', source_address)
             print_mac('Destination MAC: ', destination_address)
-            print(), print_bytes(buffer), print()'''
+            print(), print_bytes(buffer), print()
 
 
 fh.close()
