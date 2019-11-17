@@ -9,6 +9,8 @@ http = dict()
 https = dict()
 telnet = dict()
 ssh = dict()
+ftp_data = dict()
+ftp_control = dict()
 
 FIN = 1
 SYN = 2
@@ -148,13 +150,22 @@ def print_tcp(buffer):
         print("NetBIOS Session Service")
     elif src_tcp_port == 20 or dst_tcp_port == 20:
         print("FTP-DATA")
+        ip_and_port = print_srcip(buffer) + str(src_tcp_port) + print_dstip(buffer) + str(dst_tcp_port)
+        reply_ip_and_port = print_dstip(buffer) + str(dst_tcp_port) + print_srcip(buffer) + str(src_tcp_port)
+        if ip_and_port not in ftp_data.keys():
+            if reply_ip_and_port not in ftp_data.keys():
+                ftp_data[ip_and_port] = list()
+                ftp_data[ip_and_port].append(frame_number)
+            elif reply_ip_and_port in ftp_data.keys():
+                ftp_data[reply_ip_and_port].append(frame_number)
+        elif ip_and_port in ftp_data.keys():
+            ftp_data[ip_and_port].append(frame_number)
     elif src_tcp_port == 21 or dst_tcp_port == 21:
         print("FTP-CONTROL")
     elif src_tcp_port == 22 or dst_tcp_port == 22:
         print("SSH")
         ip_and_port = print_srcip(buffer)+str(src_tcp_port)+print_dstip(buffer)+str(dst_tcp_port)
         reply_ip_and_port = print_dstip(buffer)+str(dst_tcp_port)+print_srcip(buffer)+str(src_tcp_port)
-        # print(ip_and_port)
         if ip_and_port not in ssh.keys():
             if reply_ip_and_port not in ssh.keys():
                 ssh[ip_and_port] = list()
@@ -260,7 +271,7 @@ def print_ethernet_arp(buffer):
     print()
     pass
 
-fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/SSHv2.cap", "rb")
+fh = open("/home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/trace-12.pcap", "rb")
 frame_number = 0
 byte = fh.read(32)
 while byte:
@@ -315,7 +326,7 @@ if len(http) > 0:
     http_com = 0
     for key in http.keys():
         http_com += 1
-        if len(http[key]) > 2:
+        if len(http[key]) > 20:
             http[key] = http[key][:10] + http[key][-10:]
             print("HTTP communication nr.", http_com,
                   "contained more than twenty frames, only the first ten and the last ten will be displayed.")
@@ -376,7 +387,7 @@ if len(https) > 0:
     https_com = 0
     for key in https.keys():
         https_com += 1
-        if len(https[key]) > 2:
+        if len(https[key]) > 20:
             https[key] = https[key][:10] + https[key][-10:]
             print("HTTPS communication nr.", https_com,
                   "contained more than twenty frames, only the first ten and the last ten will be displayed.")
@@ -427,7 +438,7 @@ if len(https) > 0:
             if len(buffer) >= 55:
                 content_type = buffer[54]
                 if content_type == 23:
-                    print("HTTPS over TSL - Sending application data")
+                    print("HTTPS over TLS - Sending application data")
                 else:
                     print("HTTPS")
             print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
@@ -437,75 +448,13 @@ else:
     print("No HTTPS communication recorded.")
 
 
-if len(ssh) > 0:
-    print("SSH Communication", ssh)
-    ssh_com = 0
-    for key in ssh.keys():
-        ssh_com += 1
-        if len(ssh[key]) > 2:
-            ssh[key] = ssh[key][:10] + ssh[key][-10:]
-            print("SSH communication nr.", ssh_com,
-                  "contained more than twenty frames, only the first ten and the last ten will be displayed.")
-        else:
-            print("SSH communication nr. ", ssh_com)
-        while len(ssh[key]) > 0:
-            ssh_frame = ssh[key].pop(0)
-            fh.seek(0, 0)
-            frame_number = 0
-            byte = fh.read(32)
-            while ssh_frame != (frame_number + 1):
-                frame_number += 1
-                if frame_number > 1:
-                    byte = fh.read(8)
-                saved = fh.read(4)
-                saved = struct.unpack('<I', saved)
-                wire = fh.read(4)
-                wire = struct.unpack('<I', wire)
-                next_frame_offset = wire[0]
-                byte = buffer = fh.read(next_frame_offset)
-                next_frame_offset -= 12
-            if frame_number != 0:
-                byte = fh.read(8)
-            saved = fh.read(4)
-            saved = struct.unpack('<I', saved)
-            wire = fh.read(4)
-            wire = struct.unpack('<I', wire)
-            next_frame_offset = wire[0]
-            byte = buffer = fh.read(next_frame_offset)
-            print("Frame :", ssh_frame, "\nEthernet II", end='')
-            print_mac('Source MAC: ', buffer[6:12])
-            print_mac('Destination MAC: ', buffer[0:6])
-            ip_info = buffer[14:15]
-            ip_v = int(ord(ip_info) >> 4) & 15
-            ip_hl = int(ord(ip_info)) & 15
-            if ip_v == 4:
-                print("\nIPv4 (IHL", str(ip_hl) + ")")
-            print("Source IP:", print_srcip(buffer))
-            print("Destination IP:", print_dstip(buffer))
-            print("TCP")
-            src_tcp_port = buffer[34:36]
-            src_tcp_port = struct.unpack('>H', src_tcp_port)
-            src_tcp_port = src_tcp_port[0]
-            dst_tcp_port = buffer[36:38]
-            dst_tcp_port = struct.unpack('>H', dst_tcp_port)
-            dst_tcp_port = dst_tcp_port[0]
-            get_tcp_flags(buffer)
-            print("SSH")
-            print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
-            print("File size", saved[0], ", sent by wire", wire[0])
-            print(), print_bytes(buffer), print()
-else:
-    print("No SSH communication recorded.")
-
-
-
 '''
 if len(telnet) > 0:
     print("TELNET Communication", telnet)
     telnet_com = 0
     for key in telnet.keys():
         telnet_com += 1
-        if len(telnet[key]) > 2:
+        if len(telnet[key]) > 20:
             telnet[key] = telnet[key][:10] + telnet[key][-10:]
             print("TELNET communication nr.", telnet_com, "contained more than twenty frames, only the first ten and the last ten will be displayed.")
         else:
@@ -559,6 +508,131 @@ if len(telnet) > 0:
 else:
     print("No TELNET communication recorded.")
 '''
+
+
+'''
+if len(ssh) > 0:
+    print("SSH Communication", ssh)
+    ssh_com = 0
+    for key in ssh.keys():
+        ssh_com += 1
+        if len(ssh[key]) > 20:
+            ssh[key] = ssh[key][:10] + ssh[key][-10:]
+            print("SSH communication nr.", ssh_com,
+                  "contained more than twenty frames, only the first ten and the last ten will be displayed.")
+        else:
+            print("SSH communication nr. ", ssh_com)
+        while len(ssh[key]) > 0:
+            ssh_frame = ssh[key].pop(0)
+            fh.seek(0, 0)
+            frame_number = 0
+            byte = fh.read(32)
+            while ssh_frame != (frame_number + 1):
+                frame_number += 1
+                if frame_number > 1:
+                    byte = fh.read(8)
+                saved = fh.read(4)
+                saved = struct.unpack('<I', saved)
+                wire = fh.read(4)
+                wire = struct.unpack('<I', wire)
+                next_frame_offset = wire[0]
+                byte = buffer = fh.read(next_frame_offset)
+                next_frame_offset -= 12
+            if frame_number != 0:
+                byte = fh.read(8)
+            saved = fh.read(4)
+            saved = struct.unpack('<I', saved)
+            wire = fh.read(4)
+            wire = struct.unpack('<I', wire)
+            next_frame_offset = wire[0]
+            byte = buffer = fh.read(next_frame_offset)
+            print("Frame :", ssh_frame, "\nEthernet II", end='')
+            print_mac('Source MAC: ', buffer[6:12])
+            print_mac('Destination MAC: ', buffer[0:6])
+            ip_info = buffer[14:15]
+            ip_v = int(ord(ip_info) >> 4) & 15
+            ip_hl = int(ord(ip_info)) & 15
+            if ip_v == 4:
+                print("\nIPv4 (IHL", str(ip_hl) + ")")
+            print("Source IP:", print_srcip(buffer))
+            print("Destination IP:", print_dstip(buffer))
+            print("TCP")
+            src_tcp_port = buffer[34:36]
+            src_tcp_port = struct.unpack('>H', src_tcp_port)
+            src_tcp_port = src_tcp_port[0]
+            dst_tcp_port = buffer[36:38]
+            dst_tcp_port = struct.unpack('>H', dst_tcp_port)
+            dst_tcp_port = dst_tcp_port[0]
+            get_tcp_flags(buffer)
+            print("SSH")
+            print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
+            print("File size", saved[0], ", sent by wire", wire[0])
+            print(), print_bytes(buffer), print()
+else:
+    print("No SSH communication recorded.")
+'''
+
+
+if len(ftp_data) > 0:
+    print("FTP-DATA Communication", ftp_data)
+    ftp_data_com = 0
+    for key in ftp_data.keys():
+        ftp_data_com += 1
+        if len(ftp_data[key]) > 20:
+            ftp_data[key] = ftp_data[key][:10] + ftp_data[key][-10:]
+            print("FTP-DATA communication nr.", ftp_data_com,
+                  "contained more than twenty frames, only the first ten and the last ten will be displayed.")
+        else:
+            print("FTP-DATA communication nr. ", ftp_data_com)
+        while len(ftp_data[key]) > 0:
+            ftp_data_frame = ftp_data[key].pop(0)
+            fh.seek(0, 0)
+            frame_number = 0
+            byte = fh.read(32)
+            while ftp_data_frame != (frame_number + 1):
+                frame_number += 1
+                if frame_number > 1:
+                    byte = fh.read(8)
+                saved = fh.read(4)
+                saved = struct.unpack('<I', saved)
+                wire = fh.read(4)
+                wire = struct.unpack('<I', wire)
+                next_frame_offset = wire[0]
+                byte = buffer = fh.read(next_frame_offset)
+                next_frame_offset -= 12
+            if frame_number != 0:
+                byte = fh.read(8)
+            saved = fh.read(4)
+            saved = struct.unpack('<I', saved)
+            wire = fh.read(4)
+            wire = struct.unpack('<I', wire)
+            next_frame_offset = wire[0]
+            byte = buffer = fh.read(next_frame_offset)
+            print("Frame :", ftp_data_frame, "\nEthernet II", end='')
+            print_mac('Source MAC: ', buffer[6:12])
+            print_mac('Destination MAC: ', buffer[0:6])
+            ip_info = buffer[14:15]
+            ip_v = int(ord(ip_info) >> 4) & 15
+            ip_hl = int(ord(ip_info)) & 15
+            if ip_v == 4:
+                print("\nIPv4 (IHL", str(ip_hl) + ")")
+            print("Source IP:", print_srcip(buffer))
+            print("Destination IP:", print_dstip(buffer))
+            print("TCP")
+            src_tcp_port = buffer[34:36]
+            src_tcp_port = struct.unpack('>H', src_tcp_port)
+            src_tcp_port = src_tcp_port[0]
+            dst_tcp_port = buffer[36:38]
+            dst_tcp_port = struct.unpack('>H', dst_tcp_port)
+            dst_tcp_port = dst_tcp_port[0]
+            get_tcp_flags(buffer)
+            print("FTP-DATA")
+            print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
+            print("File size", saved[0], ", sent by wire", wire[0])
+            print(), print_bytes(buffer), print()
+else:
+    print("No FTP-DATA communication recorded.")
+
 
 '''arp_com = 0
 for key in arp_rank.keys():
