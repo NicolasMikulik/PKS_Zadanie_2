@@ -23,7 +23,7 @@ ACK = 16
 with open('/home/nicolas/Documents/FIIT/PKS/Zadanie_2/netcom_constants.txt') as extern_file:
     constants = extern_file.readlines()
 constants = [line.strip() for line in constants]
-#print(constants)
+# print(constants)
 limit = int(constants[1].split(' ')[0])
 print(limit)
 
@@ -35,6 +35,7 @@ def get_constant(number):
             extern_number = int(words[0])
             if extern_number == number:
                 return words[1]
+
 
 def print_bytes(buffer):
     line_length = 0
@@ -84,8 +85,9 @@ def print_arp_dstip(buffer):
     dst_ip2 = buffer[39:40]
     dst_ip3 = buffer[40:41]
     dst_ip4 = buffer[41:42]
-    destination_ip = str(ord(dst_ip1))+'.'+str(ord(dst_ip2))+'.'+str(ord(dst_ip3))+'.'+str(ord(dst_ip4))
+    destination_ip = str(ord(dst_ip1)) + '.' + str(ord(dst_ip2)) + '.' + str(ord(dst_ip3)) + '.' + str(ord(dst_ip4))
     return destination_ip
+
 
 def print_srcip(buffer):
     src_ip1 = buffer[26:27]
@@ -107,7 +109,7 @@ def print_dstip(buffer):
     dst_ip2 = buffer[31:32]
     dst_ip3 = buffer[32:33]
     dst_ip4 = buffer[33:34]
-    destination_ip = str(ord(dst_ip1))+'.'+str(ord(dst_ip2))+'.'+str(ord(dst_ip3))+'.'+str(ord(dst_ip4))
+    destination_ip = str(ord(dst_ip1)) + '.' + str(ord(dst_ip2)) + '.' + str(ord(dst_ip3)) + '.' + str(ord(dst_ip4))
     return destination_ip
 
 
@@ -131,7 +133,8 @@ def print_udp(buffer):
             tftp.append(dst_udp_port)
         if src_udp_port in tftp and dst_udp_port in tftp:
             print("TFTP")
-    if get_constant(dst_udp_port) == "TFTP" or get_constant(src_udp_port) == "TFTP" or src_udp_port in tftp or dst_udp_port in tftp:
+    if get_constant(dst_udp_port) == "TFTP" or get_constant(
+            src_udp_port) == "TFTP" or src_udp_port in tftp or dst_udp_port in tftp:
         ip_and_port = print_srcip(buffer) + str(src_udp_port) + print_dstip(buffer)
         reply_ip_and_port = print_dstip(buffer) + str(dst_udp_port) + print_srcip(buffer)
         print(ip_and_port, reply_ip_and_port)
@@ -177,8 +180,8 @@ def print_tcp(buffer):
     dst_tcp_port = dst_tcp_port[0]
     if get_constant(src_tcp_port) == "NETBIOS_SES" or get_constant(dst_tcp_port) == "NETBIOS_SES":
         print("NetBIOS Session Service")
-    elif get_constant(src_tcp_port) == "FTP-DATA" or get_constant(dst_tcp_port) == "FTP-DATA":
-        print("FTP-DATA")
+    elif get_constant(src_tcp_port) == "FTP_DATA" or get_constant(dst_tcp_port) == "FTP_DATA":
+        print("FTP_DATA")
         ip_and_port = print_srcip(buffer) + str(src_tcp_port) + print_dstip(buffer) + str(dst_tcp_port)
         reply_ip_and_port = print_dstip(buffer) + str(dst_tcp_port) + print_srcip(buffer) + str(src_tcp_port)
         if ip_and_port not in ftp_data.keys():
@@ -189,8 +192,8 @@ def print_tcp(buffer):
                 ftp_data[reply_ip_and_port].append(frame_number)
         elif ip_and_port in ftp_data.keys():
             ftp_data[ip_and_port].append(frame_number)
-    elif get_constant(src_tcp_port) == "FTP-CONTROL" or get_constant(dst_tcp_port) == "FTP-CONTROL":
-        print("FTP-CONTROL")
+    elif get_constant(src_tcp_port) == "FTP_CONTROL" or get_constant(dst_tcp_port) == "FTP_CONTROL":
+        print("FTP_CONTROL")
         ip_and_port = print_srcip(buffer) + str(src_tcp_port) + print_dstip(buffer) + str(dst_tcp_port)
         reply_ip_and_port = print_dstip(buffer) + str(dst_tcp_port) + print_srcip(buffer) + str(src_tcp_port)
         if ip_and_port not in ftp_control.keys():
@@ -203,8 +206,8 @@ def print_tcp(buffer):
             ftp_control[ip_and_port].append(frame_number)
     elif get_constant(src_tcp_port) == "SSH" or get_constant(dst_tcp_port) == "SSH":
         print("SSH")
-        ip_and_port = print_srcip(buffer)+str(src_tcp_port)+print_dstip(buffer)+str(dst_tcp_port)
-        reply_ip_and_port = print_dstip(buffer)+str(dst_tcp_port)+print_srcip(buffer)+str(src_tcp_port)
+        ip_and_port = print_srcip(buffer) + str(src_tcp_port) + print_dstip(buffer) + str(dst_tcp_port)
+        reply_ip_and_port = print_dstip(buffer) + str(dst_tcp_port) + print_srcip(buffer) + str(src_tcp_port)
         if ip_and_port not in ssh.keys():
             if reply_ip_and_port not in ssh.keys():
                 ssh[ip_and_port] = list()
@@ -228,8 +231,8 @@ def print_tcp(buffer):
             telnet[ip_and_port].append(frame_number)
     elif get_constant(src_tcp_port) == "HTTP" or get_constant(dst_tcp_port) == "HTTP":
         print("HTTP")
-        ip_and_port = print_srcip(buffer)+str(src_tcp_port)+print_dstip(buffer)+str(dst_tcp_port)
-        reply_ip_and_port = print_dstip(buffer)+str(dst_tcp_port)+print_srcip(buffer)+str(src_tcp_port)
+        ip_and_port = print_srcip(buffer) + str(src_tcp_port) + print_dstip(buffer) + str(dst_tcp_port)
+        reply_ip_and_port = print_dstip(buffer) + str(dst_tcp_port) + print_srcip(buffer) + str(src_tcp_port)
         if ip_and_port not in http.keys():
             if reply_ip_and_port not in http.keys():
                 http[ip_and_port] = list()
@@ -301,6 +304,7 @@ def print_icmp(buffer):
     elif ip_and_seqn in icmp.keys():
         icmp[ip_and_seqn].append(frame_number)
 
+
 def print_ethernet_ip(buffer):
     ip_info = buffer[14:15]
     ip_v = int(ord(ip_info) >> 4) & 15
@@ -343,9 +347,11 @@ def print_ethernet_arp(buffer):
             else:
                 arp_rank[mac_and_ip] = list()
                 arp_rank[mac_and_ip].append(frame_number)
-    elif mac_and_ip in arp_rank.keys() and dst_mac_record == 'ffffffffffff' and arp_rank[mac_and_ip].count(frame_number)<=0:
+    elif mac_and_ip in arp_rank.keys() and dst_mac_record == 'ffffffffffff' and arp_rank[mac_and_ip].count(
+            frame_number) <= 0:
         arp_rank[mac_and_ip].append(frame_number)
     print()
+
 
 file_path = ""
 while (file_path != "exit"):
@@ -422,7 +428,6 @@ while (file_path != "exit"):
     if len(sorted_ip_rank) > 0:
         print("\nHighest number of packets (", sorted_ip_rank[0][1], ") was sent by ", sorted_ip_rank[0][0], sep='')
 
-
     if len(http) > 0:
         print("HTTP Communication", http)
         http_com = 0
@@ -482,7 +487,6 @@ while (file_path != "exit"):
                 print(), print_bytes(buffer), print()
     else:
         print("No HTTP communication recorded.")
-
 
     if len(https) > 0:
         print("HTTPS Communication", https)
@@ -549,7 +553,6 @@ while (file_path != "exit"):
     else:
         print("No HTTPS communication recorded.")
 
-
     if len(telnet) > 0:
         print("TELNET Communication", telnet)
         telnet_com = 0
@@ -557,7 +560,8 @@ while (file_path != "exit"):
             telnet_com += 1
             if len(telnet[key]) > 20:
                 telnet[key] = telnet[key][:10] + telnet[key][-10:]
-                print("TELNET communication nr.", telnet_com, "contained more than twenty frames, only the first ten and the last ten will be displayed.")
+                print("TELNET communication nr.", telnet_com,
+                      "contained more than twenty frames, only the first ten and the last ten will be displayed.")
             else:
                 print("TELNET communication nr. ", telnet_com)
             while len(telnet[key]) > 0:
@@ -608,7 +612,6 @@ while (file_path != "exit"):
                 print(), print_bytes(buffer), print()
     else:
         print("No TELNET communication recorded.")
-
 
     if len(ssh) > 0:
         print("SSH Communication", ssh)
@@ -670,18 +673,17 @@ while (file_path != "exit"):
     else:
         print("No SSH communication recorded.")
 
-
     if len(ftp_data) > 0:
-        print("FTP-DATA Communication", ftp_data)
+        print("FTP_DATA Communication", ftp_data)
         ftp_data_com = 0
         for key in ftp_data.keys():
             ftp_data_com += 1
             if len(ftp_data[key]) > 20:
                 ftp_data[key] = ftp_data[key][:10] + ftp_data[key][-10:]
-                print("FTP-DATA communication nr.", ftp_data_com,
+                print("FTP_DATA communication nr.", ftp_data_com,
                       "contained more than twenty frames, only the first ten and the last ten will be displayed.")
             else:
-                print("FTP-DATA communication nr. ", ftp_data_com)
+                print("FTP_DATA communication nr. ", ftp_data_com)
             while len(ftp_data[key]) > 0:
                 ftp_data_frame = ftp_data[key].pop(0)
                 fh.seek(0, 0)
@@ -724,25 +726,24 @@ while (file_path != "exit"):
                 dst_tcp_port = struct.unpack('>H', dst_tcp_port)
                 dst_tcp_port = dst_tcp_port[0]
                 get_tcp_flags(buffer)
-                print("FTP-DATA")
+                print("FTP_DATA")
                 print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
                 print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0])
                 print(), print_bytes(buffer), print()
     else:
-        print("No FTP-DATA communication recorded.")
-
+        print("No FTP_DATA communication recorded.")
 
     if len(ftp_control) > 0:
-        print("FTP-CONTROL Communication", ftp_control)
+        print("FTP_CONTROL Communication", ftp_control)
         ftp_control_com = 0
         for key in ftp_control.keys():
             ftp_control_com += 1
             if len(ftp_control[key]) > 20:
                 ftp_control[key] = ftp_control[key][:10] + ftp_control[key][-10:]
-                print("FTP-CONTROL communication nr.", ftp_control_com,
+                print("FTP_CONTROL communication nr.", ftp_control_com,
                       "contained more than twenty frames, only the first ten and the last ten will be displayed.")
             else:
-                print("FTP-CONTROL communication nr. ", ftp_control_com)
+                print("FTP_CONTROL communication nr. ", ftp_control_com)
             while len(ftp_control[key]) > 0:
                 ftp_control_frame = ftp_control[key].pop(0)
                 fh.seek(0, 0)
@@ -785,13 +786,12 @@ while (file_path != "exit"):
                 dst_tcp_port = struct.unpack('>H', dst_tcp_port)
                 dst_tcp_port = dst_tcp_port[0]
                 get_tcp_flags(buffer)
-                print("FTP-CONTROL")
+                print("FTP_CONTROL")
                 print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
                 print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0])
                 print(), print_bytes(buffer), print()
     else:
-        print("No FTP-CONTROL communication recorded.")
-
+        print("No FTP_CONTROL communication recorded.")
 
     if len(tftp_rec) > 0:
         print("TFTP Communication", tftp_rec)
@@ -852,7 +852,6 @@ while (file_path != "exit"):
     else:
         print("No TFTP communication recorded.")
 
-
     if len(icmp) > 0:
         print("ICMP Communication", icmp)
         icmp_com = 0
@@ -905,66 +904,69 @@ while (file_path != "exit"):
     else:
         print("No ICMP communication recorded.")
 
-
-    print(arp_rank)
-    arp_com = 0
-    for key in arp_rank.keys():
-        arp_com += 1
-        print("ARP communication nr. ", arp_com)
-        while len(arp_rank[key]) > 0:
-            arp_frame = arp_rank[key].pop(0)
-            fh.seek(0, 0)
-            frame_number = 0
-            byte = fh.read(32)
-            while arp_frame != (frame_number + 1):
-                frame_number += 1
-                if frame_number > 1:
+    if len(arp_rank) > 0:
+        print(arp_rank)
+        arp_com = 0
+        for key in arp_rank.keys():
+            arp_com += 1
+            print("ARP communication nr. ", arp_com)
+            while len(arp_rank[key]) > 0:
+                arp_frame = arp_rank[key].pop(0)
+                fh.seek(0, 0)
+                frame_number = 0
+                byte = fh.read(32)
+                while arp_frame != (frame_number + 1):
+                    frame_number += 1
+                    if frame_number > 1:
+                        byte = fh.read(8)
+                    saved = fh.read(4)
+                    # print("FRAME :", frame_number)
+                    saved = struct.unpack('<I', saved)
+                    wire = fh.read(4)
+                    wire = struct.unpack('<I', wire)
+                    next_frame_offset = wire[0]
+                    byte = buffer = fh.read(next_frame_offset)
+                    next_frame_offset -= 12
+                if (frame_number != 0):
                     byte = fh.read(8)
                 saved = fh.read(4)
-                # print("FRAME :", frame_number)
                 saved = struct.unpack('<I', saved)
                 wire = fh.read(4)
                 wire = struct.unpack('<I', wire)
                 next_frame_offset = wire[0]
                 byte = buffer = fh.read(next_frame_offset)
-                next_frame_offset -= 12
-            if(frame_number != 0):
-                byte = fh.read(8)
-            saved = fh.read(4)
-            saved = struct.unpack('<I', saved)
-            wire = fh.read(4)
-            wire = struct.unpack('<I', wire)
-            next_frame_offset = wire[0]
-            byte = buffer = fh.read(next_frame_offset)
-            arp_opcode = buffer[20:22]
-            arp_opcode = struct.unpack('>H', arp_opcode)
-            if arp_opcode[0] == 1:
-                print("ARP-Request, IP address: ", print_arp_dstip(buffer), end=' ')
-                print("MAC: ???")
-                print("Sender IP: ", print_arp_srcip(buffer), end='')
-                print(", Target IP: ", print_arp_dstip(buffer), end='')
-                print("\nFRAME :", frame_number + 1)
-                print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0], "\nEthernet II - ARP", end='')
-                source_address = buffer[6:12]
-                destination_address = buffer[0:6]
-                print_mac('Source MAC: ', source_address)
-                print_mac('Destination MAC: ', destination_address)
-                print(), print_bytes(buffer), print()
-            elif arp_opcode[0] == 2:
-                print("ARP-Reply, IP address: ", print_arp_srcip(buffer), end=' ')
-                print_mac('MAC: ', buffer[22:28])
-                print("\nSender IP: ", print_arp_srcip(buffer), end='')
-                print_arp_srcip(buffer)
-                print(", Target IP: ", print_arp_dstip(buffer), end='')
-                print_arp_dstip(buffer)
-                print("\nFRAME :", frame_number + 1)
-                print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0], "\nEthernet II - ARP", end='')
-                source_address = buffer[6:12]
-                destination_address = buffer[0:6]
-                print_mac('Source MAC: ', source_address)
-                print_mac('Destination MAC: ', destination_address)
-                print(), print_bytes(buffer), print()
-
+                arp_opcode = buffer[20:22]
+                arp_opcode = struct.unpack('>H', arp_opcode)
+                if arp_opcode[0] == 1:
+                    print("ARP-Request, IP address: ", print_arp_dstip(buffer), end=' ')
+                    print("MAC: ???")
+                    print("Sender IP: ", print_arp_srcip(buffer), end='')
+                    print(", Target IP: ", print_arp_dstip(buffer), end='')
+                    print("\nFRAME :", frame_number + 1)
+                    print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0],
+                          "\nEthernet II - ARP", end='')
+                    source_address = buffer[6:12]
+                    destination_address = buffer[0:6]
+                    print_mac('Source MAC: ', source_address)
+                    print_mac('Destination MAC: ', destination_address)
+                    print(), print_bytes(buffer), print()
+                elif arp_opcode[0] == 2:
+                    print("ARP-Reply, IP address: ", print_arp_srcip(buffer), end=' ')
+                    print_mac('MAC: ', buffer[22:28])
+                    print("\nSender IP: ", print_arp_srcip(buffer), end='')
+                    print_arp_srcip(buffer)
+                    print(", Target IP: ", print_arp_dstip(buffer), end='')
+                    print_arp_dstip(buffer)
+                    print("\nFRAME :", frame_number + 1)
+                    print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0],
+                          "\nEthernet II - ARP", end='')
+                    source_address = buffer[6:12]
+                    destination_address = buffer[0:6]
+                    print_mac('Source MAC: ', source_address)
+                    print_mac('Destination MAC: ', destination_address)
+                    print(), print_bytes(buffer), print()
+    else:
+        print("No ARP communication recorded")
 try:
     fh
 except NameError:
