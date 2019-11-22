@@ -327,7 +327,7 @@ def print_ethernet_ip(buffer):
         print_icmp(buffer)
     elif transport_protocol == "EIGRP":
         print("EIGRP")
-    # print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0])
+    # print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire)
     print()
 
 
@@ -384,7 +384,12 @@ while (file_path != "exit"):
         saved = struct.unpack('<I', saved)
         wire = fh.read(4)
         wire = struct.unpack('<I', wire)
-        next_frame_offset = wire[0]
+        wire = wire[0]
+        if wire <= 60:
+           wire = 64
+        else:
+           wire = wire + 4
+        next_frame_offset = saved[0]
         byte = buffer = fh.read(next_frame_offset)
         destination_address = buffer[0:6]
         source_address = buffer[6:12]
@@ -397,7 +402,7 @@ while (file_path != "exit"):
             print_mac('Source MAC: ', source_address)
             print_mac('Destination MAC: ', destination_address)
             print()
-            print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0])
+            print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire)
             ethertype = get_constant(ftype[0])
             # print(ethertype)
             if ethertype == "IPV4":
@@ -418,7 +423,7 @@ while (file_path != "exit"):
             print_mac('Source MAC: ', source_address)
             print_mac('Destination MAC: ', destination_address)
             print()
-            print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0])
+            print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire)
         print_bytes(buffer)
         print()
     print("IP addresses of sending nodes:")
@@ -452,7 +457,12 @@ while (file_path != "exit"):
                     saved = struct.unpack('<I', saved)
                     wire = fh.read(4)
                     wire = struct.unpack('<I', wire)
-                    next_frame_offset = wire[0]
+                    wire = wire[0]
+                    if wire <= 60:
+                       wire = 64
+                    else:
+                       wire = wire + 4
+                    next_frame_offset = saved[0]
                     byte = buffer = fh.read(next_frame_offset)
                     next_frame_offset -= 12
                 if frame_number != 0:
@@ -461,7 +471,12 @@ while (file_path != "exit"):
                 saved = struct.unpack('<I', saved)
                 wire = fh.read(4)
                 wire = struct.unpack('<I', wire)
-                next_frame_offset = wire[0]
+                wire = wire[0]
+                if wire <= 60:
+                    wire = 64
+                else:
+                    wire = wire + 4
+                next_frame_offset = saved[0]
                 byte = buffer = fh.read(next_frame_offset)
                 print("Frame :", http_frame, "\nEthernet II", end='')
                 print_mac('Source MAC: ', buffer[6:12])
@@ -483,7 +498,7 @@ while (file_path != "exit"):
                 get_tcp_flags(buffer)
                 print("HTTP")
                 print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
-                print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0])
+                print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire)
                 print(), print_bytes(buffer), print()
     else:
         print("No HTTP communication recorded.")
@@ -512,7 +527,12 @@ while (file_path != "exit"):
                     saved = struct.unpack('<I', saved)
                     wire = fh.read(4)
                     wire = struct.unpack('<I', wire)
-                    next_frame_offset = wire[0]
+                    wire = wire[0]
+                    if wire <= 60:
+                        wire = 64
+                    else:
+                        wire = wire + 4
+                    next_frame_offset = saved[0]
                     byte = buffer = fh.read(next_frame_offset)
                     next_frame_offset -= 12
                 if frame_number != 0:
@@ -521,7 +541,12 @@ while (file_path != "exit"):
                 saved = struct.unpack('<I', saved)
                 wire = fh.read(4)
                 wire = struct.unpack('<I', wire)
-                next_frame_offset = wire[0]
+                wire = wire[0]
+                if wire <= 60:
+                    wire = 64
+                else:
+                    wire = wire + 4
+                next_frame_offset = saved[0]
                 byte = buffer = fh.read(next_frame_offset)
                 print("Frame :", https_frame, "\nEthernet II", end='')
                 print_mac('Source MAC: ', buffer[6:12])
@@ -548,7 +573,7 @@ while (file_path != "exit"):
                     else:
                         print("HTTPS")
                 print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
-                print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0])
+                print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire)
                 print(), print_bytes(buffer), print()
     else:
         print("No HTTPS communication recorded.")
@@ -577,7 +602,12 @@ while (file_path != "exit"):
                     saved = struct.unpack('<I', saved)
                     wire = fh.read(4)
                     wire = struct.unpack('<I', wire)
-                    next_frame_offset = wire[0]
+                    wire = wire[0]
+                    if wire <= 60:
+                        wire = 64
+                    else:
+                        wire = wire + 4
+                    next_frame_offset = saved[0]
                     byte = buffer = fh.read(next_frame_offset)
                     next_frame_offset -= 12
                 if frame_number != 0:
@@ -586,7 +616,12 @@ while (file_path != "exit"):
                 saved = struct.unpack('<I', saved)
                 wire = fh.read(4)
                 wire = struct.unpack('<I', wire)
-                next_frame_offset = wire[0]
+                wire = wire[0]
+                if wire <= 60:
+                    wire = 64
+                else:
+                    wire = wire + 4
+                next_frame_offset = saved[0]
                 byte = buffer = fh.read(next_frame_offset)
                 print("Frame :", telnet_frame, "\nEthernet II", end='')
                 print_mac('Source MAC: ', buffer[6:12])
@@ -608,7 +643,7 @@ while (file_path != "exit"):
                 get_tcp_flags(buffer)
                 print("TELNET")
                 print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
-                print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0])
+                print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire)
                 print(), print_bytes(buffer), print()
     else:
         print("No TELNET communication recorded.")
@@ -637,7 +672,12 @@ while (file_path != "exit"):
                     saved = struct.unpack('<I', saved)
                     wire = fh.read(4)
                     wire = struct.unpack('<I', wire)
-                    next_frame_offset = wire[0]
+                    wire = wire[0]
+                    if wire <= 60:
+                        wire = 64
+                    else:
+                        wire = wire + 4
+                    next_frame_offset = saved[0]
                     byte = buffer = fh.read(next_frame_offset)
                     next_frame_offset -= 12
                 if frame_number != 0:
@@ -646,7 +686,12 @@ while (file_path != "exit"):
                 saved = struct.unpack('<I', saved)
                 wire = fh.read(4)
                 wire = struct.unpack('<I', wire)
-                next_frame_offset = wire[0]
+                wire = wire[0]
+                if wire <= 60:
+                    wire = 64
+                else:
+                    wire = wire + 4
+                next_frame_offset = saved[0]
                 byte = buffer = fh.read(next_frame_offset)
                 print("Frame :", ssh_frame, "\nEthernet II", end='')
                 print_mac('Source MAC: ', buffer[6:12])
@@ -668,7 +713,7 @@ while (file_path != "exit"):
                 get_tcp_flags(buffer)
                 print("SSH")
                 print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
-                print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0])
+                print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire)
                 print(), print_bytes(buffer), print()
     else:
         print("No SSH communication recorded.")
@@ -697,7 +742,12 @@ while (file_path != "exit"):
                     saved = struct.unpack('<I', saved)
                     wire = fh.read(4)
                     wire = struct.unpack('<I', wire)
-                    next_frame_offset = wire[0]
+                    wire = wire[0]
+                    if wire <= 60:
+                        wire = 64
+                    else:
+                        wire = wire + 4
+                    next_frame_offset = saved[0]
                     byte = buffer = fh.read(next_frame_offset)
                     next_frame_offset -= 12
                 if frame_number != 0:
@@ -706,7 +756,12 @@ while (file_path != "exit"):
                 saved = struct.unpack('<I', saved)
                 wire = fh.read(4)
                 wire = struct.unpack('<I', wire)
-                next_frame_offset = wire[0]
+                wire = wire[0]
+                if wire <= 60:
+                    wire = 64
+                else:
+                    wire = wire + 4
+                next_frame_offset = saved[0]
                 byte = buffer = fh.read(next_frame_offset)
                 print("Frame :", ftp_data_frame, "\nEthernet II", end='')
                 print_mac('Source MAC: ', buffer[6:12])
@@ -728,7 +783,7 @@ while (file_path != "exit"):
                 get_tcp_flags(buffer)
                 print("FTP_DATA")
                 print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
-                print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0])
+                print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire)
                 print(), print_bytes(buffer), print()
     else:
         print("No FTP_DATA communication recorded.")
@@ -757,7 +812,12 @@ while (file_path != "exit"):
                     saved = struct.unpack('<I', saved)
                     wire = fh.read(4)
                     wire = struct.unpack('<I', wire)
-                    next_frame_offset = wire[0]
+                    wire = wire[0]
+                    if wire <= 60:
+                        wire = 64
+                    else:
+                        wire = wire + 4
+                    next_frame_offset = saved[0]
                     byte = buffer = fh.read(next_frame_offset)
                     next_frame_offset -= 12
                 if frame_number != 0:
@@ -766,7 +826,12 @@ while (file_path != "exit"):
                 saved = struct.unpack('<I', saved)
                 wire = fh.read(4)
                 wire = struct.unpack('<I', wire)
-                next_frame_offset = wire[0]
+                wire = wire[0]
+                if wire <= 60:
+                    wire = 64
+                else:
+                    wire = wire + 4
+                next_frame_offset = saved[0]
                 byte = buffer = fh.read(next_frame_offset)
                 print("Frame :", ftp_control_frame, "\nEthernet II", end='')
                 print_mac('Source MAC: ', buffer[6:12])
@@ -788,7 +853,7 @@ while (file_path != "exit"):
                 get_tcp_flags(buffer)
                 print("FTP_CONTROL")
                 print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
-                print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0])
+                print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire)
                 print(), print_bytes(buffer), print()
     else:
         print("No FTP_CONTROL communication recorded.")
@@ -817,7 +882,12 @@ while (file_path != "exit"):
                     saved = struct.unpack('<I', saved)
                     wire = fh.read(4)
                     wire = struct.unpack('<I', wire)
-                    next_frame_offset = wire[0]
+                    wire = wire[0]
+                    if wire <= 60:
+                        wire = 64
+                    else:
+                        wire = wire + 4
+                    next_frame_offset = saved[0]
                     byte = buffer = fh.read(next_frame_offset)
                     next_frame_offset -= 12
                 if frame_number != 0:
@@ -826,7 +896,12 @@ while (file_path != "exit"):
                 saved = struct.unpack('<I', saved)
                 wire = fh.read(4)
                 wire = struct.unpack('<I', wire)
-                next_frame_offset = wire[0]
+                wire = wire[0]
+                if wire <= 60:
+                    wire = 64
+                else:
+                    wire = wire + 4
+                next_frame_offset = saved[0]
                 byte = buffer = fh.read(next_frame_offset)
                 print("Frame :", tftp_rec_frame, "\nEthernet II", end='')
                 print_mac('Source MAC: ', buffer[6:12])
@@ -847,7 +922,7 @@ while (file_path != "exit"):
                 dst_udp_port = dst_udp_port[0]
                 print("TFTP")
                 print("Source port: ", src_udp_port, "\nDestination port: ", dst_udp_port, sep='')
-                print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0])
+                print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire)
                 print(), print_bytes(buffer), print()
     else:
         print("No TFTP communication recorded.")
@@ -876,7 +951,12 @@ while (file_path != "exit"):
                     saved = struct.unpack('<I', saved)
                     wire = fh.read(4)
                     wire = struct.unpack('<I', wire)
-                    next_frame_offset = wire[0]
+                    wire = wire[0]
+                    if wire <= 60:
+                        wire = 64
+                    else:
+                        wire = wire + 4
+                    next_frame_offset = saved[0]
                     byte = buffer = fh.read(next_frame_offset)
                     next_frame_offset -= 12
                 if frame_number != 0:
@@ -885,7 +965,12 @@ while (file_path != "exit"):
                 saved = struct.unpack('<I', saved)
                 wire = fh.read(4)
                 wire = struct.unpack('<I', wire)
-                next_frame_offset = wire[0]
+                wire = wire[0]
+                if wire <= 60:
+                    wire = 64
+                else:
+                    wire = wire + 4
+                next_frame_offset = saved[0]
                 byte = buffer = fh.read(next_frame_offset)
                 print("Frame :", icmp_frame, "\nEthernet II", end='')
                 print_mac('Source MAC: ', buffer[6:12])
@@ -899,7 +984,7 @@ while (file_path != "exit"):
                 print("Destination IP:", print_dstip(buffer))
                 print("ICMP", end='')
                 get_icmp_type(buffer)
-                print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0])
+                print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire)
                 print(), print_bytes(buffer), print()
     else:
         print("No ICMP communication recorded.")
@@ -924,7 +1009,12 @@ while (file_path != "exit"):
                     saved = struct.unpack('<I', saved)
                     wire = fh.read(4)
                     wire = struct.unpack('<I', wire)
-                    next_frame_offset = wire[0]
+                    wire = wire[0]
+                    if wire <= 60:
+                        wire = 64
+                    else:
+                        wire = wire + 4
+                    next_frame_offset = saved[0]
                     byte = buffer = fh.read(next_frame_offset)
                     next_frame_offset -= 12
                 if (frame_number != 0):
@@ -933,7 +1023,12 @@ while (file_path != "exit"):
                 saved = struct.unpack('<I', saved)
                 wire = fh.read(4)
                 wire = struct.unpack('<I', wire)
-                next_frame_offset = wire[0]
+                wire = wire[0]
+                if wire <= 60:
+                    wire = 64
+                else:
+                    wire = wire + 4
+                next_frame_offset = saved[0]
                 byte = buffer = fh.read(next_frame_offset)
                 arp_opcode = buffer[20:22]
                 arp_opcode = struct.unpack('>H', arp_opcode)
@@ -943,7 +1038,7 @@ while (file_path != "exit"):
                     print("Sender IP: ", print_arp_srcip(buffer), end='')
                     print(", Target IP: ", print_arp_dstip(buffer), end='')
                     print("\nFRAME :", frame_number + 1)
-                    print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0],
+                    print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire,
                           "\nEthernet II - ARP", end='')
                     source_address = buffer[6:12]
                     destination_address = buffer[0:6]
@@ -958,7 +1053,7 @@ while (file_path != "exit"):
                     print(", Target IP: ", print_arp_dstip(buffer), end='')
                     print_arp_dstip(buffer)
                     print("\nFRAME :", frame_number + 1)
-                    print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire[0],
+                    print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire,
                           "\nEthernet II - ARP", end='')
                     source_address = buffer[6:12]
                     destination_address = buffer[0:6]
