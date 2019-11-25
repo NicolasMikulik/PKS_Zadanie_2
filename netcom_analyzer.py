@@ -418,6 +418,8 @@ while (file_path != "exit"):
                 print("802.3 SNAP", end='')
             elif comp == "RAW":
                 print("802.3 Raw", end='')
+            elif comp == "RAW_IPX":
+                print("802.3 Raw\nIPX", end='')
             else:
                 print("802.3 LLC", end='')
             print_mac('Source MAC: ', source_address)
