@@ -1,4 +1,5 @@
 import struct
+import sys
 
 # /home/nicolas/Documents/FIIT/PKS/Zadanie_2/vzorky_pcap_na_analyzu/eth-8.pcap
 tftp = list()
@@ -25,7 +26,7 @@ with open('/home/nicolas/Documents/FIIT/PKS/Zadanie_2/netcom_constants.txt') as 
 constants = [line.strip() for line in constants]
 # print(constants)
 limit = int(constants[1].split(' ')[0])
-print(limit)
+# print(limit)
 
 
 def get_constant(number):
@@ -89,18 +90,21 @@ def print_arp_dstip(buffer):
     return destination_ip
 
 
-def print_srcip(buffer):
-    src_ip1 = buffer[26:27]
-    src_ip2 = buffer[27:28]
-    src_ip3 = buffer[28:29]
-    src_ip4 = buffer[29:30]
-    source_ip = str(ord(src_ip1)) + '.' + str(ord(src_ip2)) + '.' + str(ord(src_ip3)) + '.' + str(ord(src_ip4))
+def get_rank(source_ip):
     if source_ip not in ip_addresses:
         ip_addresses.append(source_ip)
     if source_ip not in ip_rank.keys():
         ip_rank[source_ip] = 1
     else:
         ip_rank[source_ip] = ip_rank[source_ip] + 1
+
+
+def print_srcip(buffer):
+    src_ip1 = buffer[26:27]
+    src_ip2 = buffer[27:28]
+    src_ip3 = buffer[28:29]
+    src_ip4 = buffer[29:30]
+    source_ip = str(ord(src_ip1)) + '.' + str(ord(src_ip2)) + '.' + str(ord(src_ip3)) + '.' + str(ord(src_ip4))
     return source_ip
 
 
@@ -137,7 +141,7 @@ def print_udp(buffer):
             src_udp_port) == "TFTP" or src_udp_port in tftp or dst_udp_port in tftp:
         ip_and_port = print_srcip(buffer) + str(src_udp_port) + print_dstip(buffer)
         reply_ip_and_port = print_dstip(buffer) + str(dst_udp_port) + print_srcip(buffer)
-        print(ip_and_port, reply_ip_and_port)
+        # print(ip_and_port, reply_ip_and_port)
         if ip_and_port not in tftp_rec.keys():
             if reply_ip_and_port not in tftp_rec.keys():
                 tftp_rec[ip_and_port] = list()
@@ -341,6 +345,8 @@ def print_ethernet_ip(buffer):
         print("\nIPv4 (IHL", str(ip_hl) + ")")
     transport_protocol = buffer[23:24]
     transport_protocol = ord(transport_protocol)
+    source_ip = print_srcip(buffer)
+    get_rank(source_ip)
     print("Source IP:", print_srcip(buffer))
     print("Destination IP:", print_dstip(buffer))
     transport_protocol = get_constant(transport_protocol)
@@ -381,8 +387,8 @@ def print_ethernet_arp(buffer):
     print()
 
 
-file_path = ""
-while (file_path != "exit"):
+file_path = sys.argv[1]
+if (file_path != "exit"):
     tftp = list()
     ip_addresses = list()
     ip_rank = dict()
@@ -395,9 +401,6 @@ while (file_path != "exit"):
     ftp_control = dict()
     tftp_rec = dict()
     icmp = dict()
-    file_path = input("Please enter the full path to the .pcap file or type exit to close the application: ")
-    if file_path == "exit":
-        break
     fh = open(file_path, "rb")
     frame_number = 0
     byte = fh.read(32)
