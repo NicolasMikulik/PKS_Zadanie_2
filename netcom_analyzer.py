@@ -150,6 +150,14 @@ def print_udp(buffer):
         print("DNS")
     if get_constant(src_udp_port) == "NETBIOS_NAM" or get_constant(dst_udp_port) == "NETBIOS_NAM":
         print("NetBIOS Name Service")
+    if get_constant(src_udp_port) == "NETBIOS_DGRAM" or get_constant(dst_udp_port) == "NETBIOS_DGRAM":
+        print("NetBIOS Datagram Service")
+    if get_constant(src_udp_port) == "SSDP" or get_constant(dst_udp_port) == "SSDP":
+        print("Simple Service Discovery Protocol")
+    if get_constant(src_udp_port) == "MDNS" or get_constant(dst_udp_port) == "MDNS":
+        print("Multicast Domain Name System")
+    if get_constant(src_udp_port) == "LLMNR" or get_constant(dst_udp_port) == "LLMNR":
+        print("Link-local Multicast Name Resolution")
     print("Source port: ", src_udp_port, "\nDestination port: ", dst_udp_port, sep='')
 
 
@@ -410,18 +418,38 @@ while (file_path != "exit"):
             elif ethertype == "ARP":
                 print("ARP")
                 print_ethernet_arp(buffer)
+            elif ethertype == "IPV6":
+                print("IPv6")
+            elif ethertype == "LOOP":
+                print("Configuration Test Protocol (loopback)")
+            elif ethertype == "LLDP":
+                print("Link Layer Discovery Protocol")
         else:
             print("IEEE ", end='')
             ieee_type = buffer[14:15]
             comp = get_constant(ieee_type[0])
             if comp == "SNAP":
-                print("802.3 SNAP", end='')
+                print("802.3 LLC + SNAP", end='')
                 snap = buffer[20:22]
                 snap = struct.unpack('>H', snap)
                 snap = snap[0]
                 snap = get_constant(snap)
                 if snap == "CDP":
-                    print("\nCisco Discovery Protocol", end='')
+                    print(" - Cisco Discovery Protocol")
+                elif snap == "IPV4":
+                    print(" - IPv4")
+                elif snap == "IPV6":
+                    print(" - IPv6")
+                elif snap == "ARP":
+                    print(" - ARP")
+                elif snap == "NOVELL_IPX":
+                    print(" - Novell IPX")
+                elif snap == "APPLE_TALK":
+                    print(" - AppleTalk")
+                elif snap == "APPLE_AARP":
+                    print(" - Apple Talk AARP")
+                elif snap == "DTP":
+                    print("Dynamic Trunk Protocol")
             elif comp == "RAW":
                 print("802.3 Raw - IPX", end='')
                 socket_number = buffer[30:32]
@@ -450,7 +478,27 @@ while (file_path != "exit"):
                     socket_number = get_constant(socket_number)
                     if socket_number == "SAP":
                         print(" - Service Advertising Protocol")
+                    if socket_number == "NBIPX":
+                        print(" - NetBIOS over IPX")
 
+                elif comp == "NULL_SAP":
+                    print(" - Null SAP")
+                elif comp == "LLC_SM_I":
+                    print(" - LLC Sublayer Management Individual")
+                elif comp == "LLC_SM_G":
+                    print(" - LLC Sublayer Management Group")
+                elif comp == "ISI_IP":
+                    print(" - ISI IP")
+                elif comp == "X25_PLP":
+                    print(" - X25.PLP")
+                elif comp == "LAN_MGMT" :
+                    print(" - LAN Management")
+                elif comp == "NBIPX":
+                    print(" - NetBIOS over IPX")
+                elif comp == "LLC_NETBIOS":
+                    print(" - NetBIOS")
+                elif comp == "STP":
+                    print(" - Spanning Tree Protocol")
             print_mac('Source MAC: ', source_address)
             print_mac('Destination MAC: ', destination_address)
             print()
