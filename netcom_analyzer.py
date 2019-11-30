@@ -269,6 +269,8 @@ def get_icmp_type(buffer):
     icmp_type_display = " - Type: "
     if icmp_type == 0:
         icmp_type_display += "Reply"
+        print(icmp_type_display)
+        return icmp_type
     elif icmp_type == 3:
         icmp_type_display += "Destination Unreachable"
         icmp_code = buffer[35]
@@ -284,6 +286,8 @@ def get_icmp_type(buffer):
         icmp_type_display += "Redirect"
     elif icmp_type == 8:
         icmp_type_display += "Request"
+        print(icmp_type_display)
+        return icmp_type
     elif icmp_type == 11:
         icmp_type_display += "Time Exceeded"
         icmp_code = buffer[35]
@@ -297,20 +301,36 @@ def get_icmp_type(buffer):
 
 
 def print_icmp(buffer):
-    get_icmp_type(buffer)
-    icmp_seq_num = buffer[40:42]
-    icmp_seq_num = struct.unpack('>H', icmp_seq_num)
-    icmp_seq_num = icmp_seq_num[0]
-    ip_and_seqn = print_srcip(buffer) + print_dstip(buffer) + str(icmp_seq_num)
-    reply_ip_and_seqn = print_dstip(buffer) + print_srcip(buffer) + str(icmp_seq_num)
-    if ip_and_seqn not in icmp.keys():
-        if reply_ip_and_seqn not in icmp.keys():
-            icmp[ip_and_seqn] = list()
+    result = get_icmp_type(buffer)
+    if result == 0 or result == 8:
+        icmp_id = buffer[38:40]
+        icmp_id = struct.unpack('>H', icmp_id)
+        icmp_id = icmp_id[0]
+        icmp_seq_num = buffer[40:42]
+        icmp_seq_num = struct.unpack('>H', icmp_seq_num)
+        icmp_seq_num = icmp_seq_num[0]
+        print(icmp_id, icmp_seq_num)
+        ip_and_seqn = print_srcip(buffer) + print_dstip(buffer) + str(icmp_seq_num) + str(icmp_id)
+        reply_ip_and_seqn = print_dstip(buffer) + print_srcip(buffer) + str(icmp_seq_num) + str(icmp_id)
+        if ip_and_seqn not in icmp.keys():
+            if reply_ip_and_seqn not in icmp.keys():
+                icmp[ip_and_seqn] = list()
+                icmp[ip_and_seqn].append(frame_number)
+            elif reply_ip_and_seqn in icmp.keys():
+                icmp[reply_ip_and_seqn].append(frame_number)
+        elif ip_and_seqn in icmp.keys():
             icmp[ip_and_seqn].append(frame_number)
-        elif reply_ip_and_seqn in icmp.keys():
-            icmp[reply_ip_and_seqn].append(frame_number)
-    elif ip_and_seqn in icmp.keys():
-        icmp[ip_and_seqn].append(frame_number)
+    else:
+        ip_and_seqn = print_srcip(buffer) + print_dstip(buffer) + str(result)
+        reply_ip_and_seqn = print_dstip(buffer) + print_srcip(buffer) + str(result)
+        if ip_and_seqn not in icmp.keys():
+            if reply_ip_and_seqn not in icmp.keys():
+                icmp[ip_and_seqn] = list()
+                icmp[ip_and_seqn].append(frame_number)
+            elif reply_ip_and_seqn in icmp.keys():
+                icmp[reply_ip_and_seqn].append(frame_number)
+        elif ip_and_seqn in icmp.keys():
+            icmp[ip_and_seqn].append(frame_number)
 
 
 def print_ethernet_ip(buffer):
@@ -1017,6 +1037,7 @@ while (file_path != "exit"):
                       "contained more than twenty frames, only the first ten and the last ten will be displayed.")
             else:
                 print("ICMP communication nr. ", icmp_com)
+            icmp_com_size = len(icmp[key])
             while len(icmp[key]) > 0:
                 icmp_frame = icmp[key].pop(0)
                 fh.seek(0, 0)
@@ -1062,7 +1083,9 @@ while (file_path != "exit"):
                 print("Source IP:", print_srcip(buffer))
                 print("Destination IP:", print_dstip(buffer))
                 print("ICMP", end='')
-                get_icmp_type(buffer)
+                icmp_check = get_icmp_type(buffer)
+                if (icmp_check == 1 or icmp_check == 8) and icmp_com_size == 1:
+                    print("Incomplete ICMP communication.")
                 print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire)
                 print(), print_bytes(buffer), print()
     else:
