@@ -309,7 +309,7 @@ def print_icmp(buffer):
         icmp_seq_num = buffer[40:42]
         icmp_seq_num = struct.unpack('>H', icmp_seq_num)
         icmp_seq_num = icmp_seq_num[0]
-        print(icmp_id, icmp_seq_num)
+        # print(icmp_id, icmp_seq_num)
         ip_and_seqn = print_srcip(buffer) + print_dstip(buffer) + str(icmp_seq_num) + str(icmp_id)
         reply_ip_and_seqn = print_dstip(buffer) + print_srcip(buffer) + str(icmp_seq_num) + str(icmp_id)
         if ip_and_seqn not in icmp.keys():
