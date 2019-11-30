@@ -416,10 +416,41 @@ while (file_path != "exit"):
             comp = get_constant(ieee_type[0])
             if comp == "SNAP":
                 print("802.3 SNAP", end='')
+                snap = buffer[20:22]
+                snap = struct.unpack('>H', snap)
+                snap = snap[0]
+                snap = get_constant(snap)
+                if snap == "CDP":
+                    print("\nCisco Discovery Protocol", end='')
             elif comp == "RAW":
-                print("802.3 Raw", end='')
+                print("802.3 Raw - IPX", end='')
+                socket_number = buffer[30:32]
+                socket_number = struct.unpack('>H', socket_number)
+                socket_number = socket_number[0]
+                socket_number = get_constant(socket_number)
+                if socket_number == "RIP":
+                    print(" - Routing Information Protocol")
+                elif socket_number == "SAP":
+                    print(" - Service Advertising Protocol")
+                elif socket_number == "NETBIOS":
+                    print(" - NetBIOS")
+                elif socket_number == "IPX":
+                    print("IPX")
+                elif socket_number == "TCP_IPX":
+                    print(" - TCP over IPX")
+                elif socket_number == "UDP_IPX":
+                    print(" - UDP over IPX")
             else:
                 print("802.3 LLC", end='')
+                if comp == "LLC_IPX":
+                    print(" - IPX", end='')
+                    socket_number = buffer[33:35]
+                    socket_number = struct.unpack('>H', socket_number)
+                    socket_number = socket_number[0]
+                    socket_number = get_constant(socket_number)
+                    if socket_number == "SAP":
+                        print(" - Service Advertising Protocol")
+
             print_mac('Source MAC: ', source_address)
             print_mac('Destination MAC: ', destination_address)
             print()
