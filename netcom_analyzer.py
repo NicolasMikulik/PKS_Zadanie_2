@@ -268,8 +268,8 @@ def print_tcp(buffer):
     print("Source port: ", src_tcp_port, "\nDestination port: ", dst_tcp_port, sep='')
 
 
-def get_icmp_type(buffer):
-    icmp_type = buffer[34]
+def get_icmp_type(buffer, ip_hl):
+    icmp_type = buffer[34+ip_hl]
     icmp_type_display = " - Type: "
     if icmp_type == 0:
         icmp_type_display += "Reply"
@@ -277,7 +277,7 @@ def get_icmp_type(buffer):
         return icmp_type
     elif icmp_type == 3:
         icmp_type_display += "Destination Unreachable"
-        icmp_code = buffer[35]
+        icmp_code = buffer[35+ip_hl]
         if icmp_code == 0:
             icmp_type_display += " - Net Unreachable"
         if icmp_code == 1:
@@ -294,7 +294,7 @@ def get_icmp_type(buffer):
         return icmp_type
     elif icmp_type == 11:
         icmp_type_display += "Time Exceeded"
-        icmp_code = buffer[35]
+        icmp_code = buffer[35+ip_hl]
         if icmp_code == 0:
             icmp_type_display += " - Time to Live exceeded in Transit"
         elif icmp_code == 1:
@@ -304,13 +304,13 @@ def get_icmp_type(buffer):
     print(icmp_type_display)
 
 
-def print_icmp(buffer):
-    result = get_icmp_type(buffer)
+def print_icmp(buffer, ip_hl):
+    result = get_icmp_type(buffer, ip_hl)
     if result == 0 or result == 8:
-        icmp_id = buffer[38:40]
+        icmp_id = buffer[38+ip_hl:40+ip_hl]
         icmp_id = struct.unpack('>H', icmp_id)
         icmp_id = icmp_id[0]
-        icmp_seq_num = buffer[40:42]
+        icmp_seq_num = buffer[40+ip_hl:42+ip_hl]
         icmp_seq_num = struct.unpack('>H', icmp_seq_num)
         icmp_seq_num = icmp_seq_num[0]
         # print(icmp_id, icmp_seq_num)
@@ -343,6 +343,7 @@ def print_ethernet_ip(buffer):
     ip_hl = int(ord(ip_info)) & 15
     if ip_v == 4:
         print("\nIPv4 (IHL", str(ip_hl) + ")")
+    ip_hl = ip_hl * 4
     transport_protocol = buffer[23:24]
     transport_protocol = ord(transport_protocol)
     source_ip = print_srcip(buffer)
@@ -358,7 +359,7 @@ def print_ethernet_ip(buffer):
         print_tcp(buffer)
     elif transport_protocol == "ICMP":
         print("ICMP", end='')
-        print_icmp(buffer)
+        print_icmp(buffer, ip_hl - 20)
     elif transport_protocol == "EIGRP":
         print("EIGRP")
     # print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire)
@@ -1083,10 +1084,11 @@ if (file_path != "exit"):
                 ip_hl = int(ord(ip_info)) & 15
                 if ip_v == 4:
                     print("\nIPv4 (IHL", str(ip_hl) + ")")
+                ip_hl = ip_hl * 4
                 print("Source IP:", print_srcip(buffer))
                 print("Destination IP:", print_dstip(buffer))
                 print("ICMP", end='')
-                icmp_check = get_icmp_type(buffer)
+                icmp_check = get_icmp_type(buffer, ip_hl)
                 if (icmp_check == 1 or icmp_check == 8) and icmp_com_size == 1:
                     print("Incomplete ICMP communication.")
                 print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire)
