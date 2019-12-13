@@ -14,6 +14,7 @@ ftp_data = dict()
 ftp_control = dict()
 tftp_rec = dict()
 icmp = dict()
+stp = list()
 
 FIN = 1
 SYN = 2
@@ -522,6 +523,7 @@ if (file_path != "exit"):
                 elif comp == "LLC_NETBIOS":
                     print(" - NetBIOS")
                 elif comp == "STP":
+                    stp.append(frame_number)
                     print(" - Spanning Tree Protocol")
             print_mac('Source MAC: ', source_address)
             print_mac('Destination MAC: ', destination_address)
@@ -536,6 +538,49 @@ if (file_path != "exit"):
     if len(sorted_ip_rank) > 0:
         print("\nHighest number of packets (", sorted_ip_rank[0][1], ") was sent by ", sorted_ip_rank[0][0], sep='')
 
+print("Number of STP frames:", len(stp), "\n", stp)
+while len(stp) > 0:
+    http_frame = stp.pop(0)
+    fh.seek(0, 0)
+    frame_number = 0
+    byte = fh.read(32)
+    while http_frame != (frame_number + 1):
+        frame_number += 1
+        if frame_number > 1:
+            byte = fh.read(8)
+        saved = fh.read(4)
+        saved = struct.unpack('<I', saved)
+        wire = fh.read(4)
+        wire = struct.unpack('<I', wire)
+        wire = wire[0]
+        if wire <= 60:
+           wire = 64
+        else:
+           wire = wire + 4
+        next_frame_offset = saved[0]
+        byte = buffer = fh.read(next_frame_offset)
+        next_frame_offset -= 12
+    if frame_number != 0:
+        byte = fh.read(8)
+    saved = fh.read(4)
+    saved = struct.unpack('<I', saved)
+    wire = fh.read(4)
+    wire = struct.unpack('<I', wire)
+    wire = wire[0]
+    if wire <= 60:
+        wire = 64
+    else:
+        wire = wire + 4
+    next_frame_offset = saved[0]
+    byte = buffer = fh.read(next_frame_offset)
+    print("Frame :", http_frame, "\nIEEE 802.3 LLC")
+    print_mac('Source MAC: ', buffer[6:12])
+    print_mac('Destination MAC: ', buffer[0:6])
+    print("STP - Spanning Tree Protocol")
+    print("Frame length available to pcap API", saved[0], ", frame length sent by medium", wire)
+    print(), print_bytes(buffer), print()
+
+'''
     if len(http) > 0:
         print("HTTP Communication", http)
         http_com = 0
@@ -1169,6 +1214,7 @@ if (file_path != "exit"):
                     print(), print_bytes(buffer), print()
     else:
         print("No ARP communication recorded")
+'''
 try:
     fh
 except NameError:
